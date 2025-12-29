@@ -126,7 +126,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard': return <Dashboard tasks={tasks} timetable={timetable} routines={routines} profile={profile} onNavigate={setCurrentView} onWatchAd={() => gateActionWithAd(() => {}, 10)} />;
-      case 'focus-timer': return <FocusTimer />;
+      case 'focus-timer': return <FocusTimer tasks={tasks} onUpdateTasks={updateTasks} />;
       case 'calendar': return <CalendarView tasks={tasks} timetable={timetable} onAddTask={(t) => gateActionWithAd(() => updateTasks([...tasks, t]))} />;
       case 'achievements': return <Achievements achievements={achievements} onAddAchievement={(ach) => gateActionWithAd(() => { const updated = [...achievements, ach]; setAchievements(updated); StorageService.saveAchievements(updated); })} />;
       case 'tasks': return <Tasks tasks={tasks} onUpdateTasks={updateTasks} onAddTask={(t) => gateActionWithAd(() => updateTasks([...tasks, t]), 5)} />;
