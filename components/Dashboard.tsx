@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { TaskItem, TimetableEntry, Routine, View, UserProfile } from '../types';
 import { CheckCircle2, Clock, Target, Calendar, Sparkles, BrainCircuit, BookOpen, GraduationCap, Play, Coins, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { StorageService } from '../services/storage';
+import NativeAd from './NativeAd';
 
 interface DashboardProps {
   tasks: TaskItem[];
@@ -28,19 +29,6 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
   const getDayName = () => new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
   const todayClasses = timetable.filter(e => e.day === getDayName());
   const completionRate = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
-
-  // Dynamically Load Native Banner
-  useEffect(() => {
-    const scriptId = 'adsterra-native-banner-script';
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.async = true;
-      script.setAttribute('data-cfasync', 'false');
-      script.src = 'https://pl28355175.effectivegatecpm.com/d455aae87c3654e56936461ee385ca0f/invoke.js';
-      document.body.appendChild(script);
-    }
-  }, []);
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
@@ -215,10 +203,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
           <div className="h-px flex-1 bg-slate-300"></div>
         </div>
         
-        <div className="bg-white card-surface rounded-[2rem] overflow-hidden border shadow-sm flex items-center justify-center min-h-[180px] p-2">
-           {/* The Container for Adsterra Native Banner */}
-           <div id="container-d455aae87c3654e56936461ee385ca0f" className="w-full"></div>
-        </div>
+        <NativeAd />
       </div>
     </div>
   );

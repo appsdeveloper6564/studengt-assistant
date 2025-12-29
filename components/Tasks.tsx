@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { TaskItem, Priority } from '../types';
 import { Plus, Trash2, CheckCircle2, Circle, Search, Clock, ListTodo, Edit3, X, ExternalLink } from 'lucide-react';
+import NativeAd from './NativeAd';
 
 interface TasksProps {
   tasks: TaskItem[];
@@ -17,19 +18,6 @@ const Tasks: React.FC<TasksProps> = ({ tasks, setTasks }) => {
   const [newTitle, setNewTitle] = useState('');
   const [newPriority, setNewPriority] = useState<Priority>('Medium');
   const [newDate, setNewDate] = useState('');
-
-  // Dynamically Load Native Banner for Tasks section
-  useEffect(() => {
-    const scriptId = 'adsterra-native-banner-script-tasks';
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.async = true;
-      script.setAttribute('data-cfasync', 'false');
-      script.src = 'https://pl28355175.effectivegatecpm.com/d455aae87c3654e56936461ee385ca0f/invoke.js';
-      document.body.appendChild(script);
-    }
-  }, []);
 
   const addTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,14 +185,8 @@ const Tasks: React.FC<TasksProps> = ({ tasks, setTasks }) => {
 
         {/* Task Section Ad Placement */}
         {filteredTasks.length > 0 && (
-          <div className="col-span-full mt-6 bg-white card-surface rounded-[2rem] border border-slate-100 overflow-hidden min-h-[140px] flex flex-col p-4 shadow-sm">
-             <div className="flex items-center gap-2 mb-3 px-2">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                   <ExternalLink size={10} /> Recommended For You
-                </span>
-                <div className="h-px flex-1 bg-slate-50"></div>
-             </div>
-             <div id="container-d455aae87c3654e56936461ee385ca0f" className="w-full"></div>
+          <div className="col-span-full mt-6">
+            <NativeAd />
           </div>
         )}
 
