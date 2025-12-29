@@ -1,7 +1,6 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TaskItem, TimetableEntry, Routine, View, UserProfile } from '../types';
-import { CheckCircle2, Clock, Target, Calendar, Sparkles, BrainCircuit, BookOpen, GraduationCap, Play, Coins } from 'lucide-react';
+import { CheckCircle2, Clock, Target, Calendar, Sparkles, BrainCircuit, BookOpen, GraduationCap, Play, Coins, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { StorageService } from '../services/storage';
 
@@ -26,14 +25,22 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
 
   const COLORS = ['#2563eb', '#e2e8f0'];
 
-  const upcomingTasks = tasks
-    .filter(t => !t.isCompleted)
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-    .slice(0, 3);
-
   const getDayName = () => new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
   const todayClasses = timetable.filter(e => e.day === getDayName());
   const completionRate = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+
+  // Dynamically Load Native Banner
+  useEffect(() => {
+    const scriptId = 'adsterra-native-banner-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.async = true;
+      script.setAttribute('data-cfasync', 'false');
+      script.src = 'https://pl28355175.effectivegatecpm.com/d455aae87c3654e56936461ee385ca0f/invoke.js';
+      document.body.appendChild(script);
+    }
+  }, []);
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
@@ -195,6 +202,22 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ADSTERRA NATIVE BANNER AREA */}
+      <div className="mt-10 pt-10 border-t border-slate-100">
+        <div className="flex items-center gap-2 mb-6 opacity-40 grayscale group hover:grayscale-0 hover:opacity-100 transition-all">
+          <div className="h-px flex-1 bg-slate-300"></div>
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2">
+            Academic Partner <ExternalLink size={10} />
+          </span>
+          <div className="h-px flex-1 bg-slate-300"></div>
+        </div>
+        
+        <div className="bg-white card-surface rounded-[2rem] overflow-hidden border shadow-sm flex items-center justify-center min-h-[180px] p-2">
+           {/* The Container for Adsterra Native Banner */}
+           <div id="container-d455aae87c3654e56936461ee385ca0f" className="w-full"></div>
         </div>
       </div>
     </div>

@@ -6,6 +6,10 @@
     <meta name="theme-color" content="#2563eb">
     <link rel="manifest" href="manifest.json">
     <title>Student Assistant | Mobile</title>
+    
+    <!-- ADSTERRA SOCIAL BAR (GLOBAL) -->
+    <script type='text/javascript' src='https://pl28355177.effectivegatecpm.com/9b/d3/a8/9bd3a8ce89b74f8cf36e78d15fe3090a.js'></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -63,7 +67,9 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
+          navigator.serviceWorker.register('sw.js').catch(err => {
+            console.warn('ServiceWorker registration failed: ', err);
+          });
         });
       }
     </script>
