@@ -1,20 +1,14 @@
 {
-  "background_color": "#ffffff",
-  "dir": "ltr",
-  "display": "standalone",
   "name": "Student Assistant Pro",
-  "id": "student-assistant-pwa-v1",
-  "description": "A powerful student assistant app for tracking tasks, timetables, and routines with an AI study coach.",
-  "orientation": "any",
-  "scope": "./",
   "short_name": "Assistant",
+  "description": "Your ultimate academic companion for tasks, schedules, and AI-powered study coaching.",
+  "id": "com.student.assistant.pro.v1",
   "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
   "theme_color": "#2563eb",
-  "categories": [
-    "education",
-    "productivity",
-    "lifestyle"
-  ],
+  "orientation": "portrait",
+  "categories": ["education", "productivity", "lifestyle"],
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3135/3135810.png",
@@ -35,14 +29,14 @@
       "sizes": "1080x1920",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Home Screen"
+      "label": "Student Dashboard Mobile"
     },
     {
       "src": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1920&auto=format&fit=crop",
       "sizes": "1920x1080",
       "type": "image/jpeg",
       "form_factor": "wide",
-      "label": "Desktop View"
+      "label": "Student Dashboard Desktop"
     }
   ]
 }

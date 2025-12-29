@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { TaskItem, Priority } from '../types';
-import { Plus, Trash2, CheckCircle2, Circle, Search, Clock, ListTodo, Edit3, X, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, Circle, Search, Clock, ListTodo, Edit3, X, ExternalLink, Sparkles } from 'lucide-react';
 import NativeAd from './NativeAd';
+import { AdService } from '../services/adService';
 
 interface TasksProps {
   tasks: TaskItem[];
@@ -14,7 +16,6 @@ const Tasks: React.FC<TasksProps> = ({ tasks, setTasks }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'All' | 'Pending' | 'Completed'>('All');
   
-  // New Task State
   const [newTitle, setNewTitle] = useState('');
   const [newPriority, setNewPriority] = useState<Priority>('Medium');
   const [newDate, setNewDate] = useState('');
@@ -76,12 +77,12 @@ const Tasks: React.FC<TasksProps> = ({ tasks, setTasks }) => {
         </div>
         
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex bg-white border border-slate-200 p-1.5 rounded-2xl shadow-sm">
+          <div className="flex bg-white border border-slate-200 p-1.5 rounded-2xl shadow-sm overflow-x-auto no-scrollbar">
              {(['All', 'Pending', 'Completed'] as const).map(f => (
                <button 
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${filter === f ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`px-5 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${filter === f ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
                >
                  {f}
                </button>
@@ -89,7 +90,7 @@ const Tasks: React.FC<TasksProps> = ({ tasks, setTasks }) => {
           </div>
           <button 
             onClick={() => setIsAdding(true)}
-            className="bg-blue-600 text-white px-6 py-3 rounded-2xl flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 ml-auto font-bold active:scale-95"
+            className="bg-blue-600 text-white px-6 py-3 rounded-2xl flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 ml-auto font-bold active:scale-95 shrink-0"
           >
             <Plus size={20} /> Add
           </button>
@@ -130,7 +131,25 @@ const Tasks: React.FC<TasksProps> = ({ tasks, setTasks }) => {
         </div>
       )}
 
-      {/* Task Grid */}
+      {/* REWARD SMARTLINK INTEGRATION */}
+      <div className="bg-gradient-to-r from-yellow-400 to-amber-500 p-6 rounded-3xl text-yellow-950 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg border border-yellow-300">
+        <div className="flex items-center gap-4">
+           <div className="w-12 h-12 bg-white/30 rounded-2xl flex items-center justify-center">
+              <Sparkles size={24} />
+           </div>
+           <div>
+              <h4 className="font-black text-lg">Task Reward Program</h4>
+              <p className="text-sm font-bold opacity-80 uppercase tracking-tighter">Click to unlock bonus productivity points</p>
+           </div>
+        </div>
+        <button 
+          onClick={() => AdService.triggerDirectLink()}
+          className="px-6 py-3 bg-yellow-950 text-yellow-400 rounded-xl font-black flex items-center gap-2 hover:scale-105 transition-transform shadow-xl"
+        >
+          Check Rewards <ExternalLink size={18} />
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredTasks.map((task) => (
           <div 
@@ -183,7 +202,6 @@ const Tasks: React.FC<TasksProps> = ({ tasks, setTasks }) => {
           </div>
         ))}
 
-        {/* Task Section Ad Placement */}
         {filteredTasks.length > 0 && (
           <div className="col-span-full mt-6">
             <NativeAd />
@@ -198,41 +216,6 @@ const Tasks: React.FC<TasksProps> = ({ tasks, setTasks }) => {
           </div>
         )}
       </div>
-
-      {/* Edit Modal */}
-      {editingTask && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
-            <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-blue-50/30">
-               <h3 className="text-2xl font-black text-slate-800">Edit Task</h3>
-               <button onClick={() => setEditingTask(null)} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={28} /></button>
-            </div>
-            <form onSubmit={updateTask} className="p-10 space-y-6">
-              <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Task Title</label>
-                <input required type="text" value={editingTask.title} onChange={e => setEditingTask({...editingTask, title: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-all font-bold" />
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Priority</label>
-                  <select value={editingTask.priority} onChange={e => setEditingTask({...editingTask, priority: e.target.value as Priority})} className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-blue-500 font-bold">
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Due Date</label>
-                  <input type="date" value={editingTask.dueDate} onChange={e => setEditingTask({...editingTask, dueDate: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-blue-500 font-bold" />
-                </div>
-              </div>
-              <button type="submit" className="w-full py-5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 mt-6 active:scale-95">
-                Update Task Details
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
