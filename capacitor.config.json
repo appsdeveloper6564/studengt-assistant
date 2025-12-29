@@ -2,7 +2,7 @@
 {
   "appId": "com.student.assistant.pro",
   "appName": "Student Assistant",
-  "webDir": "www",
+  "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https"
