@@ -2,18 +2,47 @@
   "background_color": "#ffffff",
   "dir": "ltr",
   "display": "standalone",
-  "name": "beststudent-assistant.vercel",
+  "name": "Student Assistant Pro",
+  "id": "student-assistant-pwa-v1",
+  "description": "A powerful student assistant app for tracking tasks, timetables, and routines with an AI study coach.",
   "orientation": "any",
-  "scope": "/",
-  "short_name": "beststudent-assistant.vercel",
-  "start_url": "/",
-  "theme_color": "#eb2525",
+  "scope": "./",
+  "short_name": "Assistant",
+  "start_url": "./index.html",
+  "theme_color": "#2563eb",
+  "categories": [
+    "education",
+    "productivity",
+    "lifestyle"
+  ],
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3135/3135810.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135810.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1080&auto=format&fit=crop",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Home Screen"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1920&auto=format&fit=crop",
+      "sizes": "1920x1080",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Desktop View"
     }
   ]
 }
