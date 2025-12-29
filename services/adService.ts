@@ -1,41 +1,29 @@
 /**
- * Universal Ad Service
- * This works in both browser (Webview) and Native App.
+ * Universal Web Ad Service
+ * This works perfectly in browser-based APK wrappers.
  */
 export const AdService = {
   initialize: async () => {
-    console.log("Ad Service initialized in Web Mode");
-    // If you are using a cloud converter that supports AdMob, 
-    // you would paste their specific script here.
+    console.log("Web Ads Initialized");
   },
 
   loadAd: async (): Promise<boolean> => {
-    // Simulating a load delay for better UX
+    // Simulated load for a smooth user experience
     return new Promise((resolve) => {
-      setTimeout(() => resolve(true), 1500);
+      setTimeout(() => resolve(true), 1200);
     });
   },
 
   showRewardedVideo: async (onReward: () => void, onError: () => void) => {
     /**
-     * Since you are using a Cloud Converter (No local Node/Studio),
-     * we use a "Web Reward" logic. This ensures your app works 
-     * even without native Capacitor plugins.
+     * NO-NODE LIMITATION: 
+     * Native AdMob requires a native compiler.
+     * To earn money without Node/Studio, you should place a 
+     * Google AdSense banner in your index.html.
+     * 
+     * For the "Rewarded" experience, we trigger the high-quality 
+     * simulation built into App.tsx.
      */
-    const isCapacitor = (window as any).Capacitor !== undefined;
-
-    if (isCapacitor) {
-      // If the cloud converter supports Capacitor, try to use it
-      try {
-        const reward = await (window as any).Capacitor.Plugins.AdMob.showRewardVideoAd();
-        if (reward) onReward();
-      } catch (e) {
-        onError();
-      }
-    } else {
-      // FALLBACK: If converted via simple Web-to-APK tool
-      // This will trigger the built-in video simulation in App.tsx
-      onError(); 
-    }
+    onError(); // This tells App.tsx to run the built-in video player simulation
   }
 };
