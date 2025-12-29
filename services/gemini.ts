@@ -1,8 +1,7 @@
-
 import { GoogleGenAI } from "@google/genai";
 
-// Fix: Correctly initialize GoogleGenAI with API key from environment variable
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize AI with API key from environment variable safely
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
 export const getAIStudyAdvice = async (context: string) => {
   try {
