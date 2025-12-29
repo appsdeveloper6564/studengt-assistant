@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, ListTodo, CalendarDays, Clock, Bot, Menu, X, Settings as SettingsIcon, GraduationCap, Coins, Play, Sparkles, ExternalLink, CheckCircle, Trophy, Calendar as CalendarIcon } from 'lucide-react';
+import { LayoutDashboard, ListTodo, CalendarDays, Clock, Bot, Menu, X, Settings as SettingsIcon, GraduationCap, Coins, Play, Sparkles, ExternalLink, CheckCircle, Trophy, PartyPopper, Timer } from 'lucide-react';
 import { View, TaskItem, TimetableEntry, Routine, UserProfile, Achievement } from './types';
 import { StorageService } from './services/storage';
 import { AdService } from './services/adService';
-import { NotificationService } from './services/notificationService';
 import Dashboard from './components/Dashboard';
 import Tasks from './components/Tasks';
 import Timetable from './components/Timetable';
@@ -13,6 +12,7 @@ import AICoach from './components/AICoach';
 import Settings from './components/Settings';
 import Achievements from './components/Achievements';
 import CalendarView from './components/CalendarView';
+import FocusTimer from './components/FocusTimer';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -40,7 +40,6 @@ const App: React.FC = () => {
     setProfile(StorageService.getProfile());
     setAchievements(StorageService.getAchievements());
     
-    // Auto-close sidebar on mobile resize
     const handleResize = () => {
       if (window.innerWidth >= 1024) setIsSidebarOpen(true);
       else setIsSidebarOpen(false);
@@ -114,18 +113,20 @@ const App: React.FC = () => {
 
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'calendar', icon: CalendarIcon, label: 'Calendar' },
-    { id: 'achievements', icon: Trophy, label: 'Achievements' },
-    { id: 'tasks', icon: ListTodo, label: 'Task List' },
-    { id: 'timetable', icon: CalendarDays, label: 'Timetable' },
-    { id: 'routine', icon: Clock, label: 'Daily Routine' },
-    { id: 'ai-coach', icon: Bot, label: 'AI Solver' },
-    { id: 'settings', icon: SettingsIcon, label: 'Settings' },
+    { id: 'focus-timer', icon: Timer, label: 'Focus Mode' },
+    { id: 'calendar', icon: PartyPopper, label: 'Planner' },
+    { id: 'achievements', icon: Trophy, label: 'Badges' },
+    { id: 'tasks', icon: ListTodo, label: 'Tasks' },
+    { id: 'timetable', icon: CalendarDays, label: 'Lectures' },
+    { id: 'routine', icon: Clock, label: 'Routine' },
+    { id: 'ai-coach', icon: Bot, label: 'AI Guru' },
+    { id: 'settings', icon: SettingsIcon, label: 'Profile' },
   ];
 
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard': return <Dashboard tasks={tasks} timetable={timetable} routines={routines} profile={profile} onNavigate={setCurrentView} onWatchAd={() => gateActionWithAd(() => {}, 10)} />;
+      case 'focus-timer': return <FocusTimer />;
       case 'calendar': return <CalendarView tasks={tasks} timetable={timetable} onAddTask={(t) => gateActionWithAd(() => updateTasks([...tasks, t]))} />;
       case 'achievements': return <Achievements achievements={achievements} onAddAchievement={(ach) => gateActionWithAd(() => { const updated = [...achievements, ach]; setAchievements(updated); StorageService.saveAchievements(updated); })} />;
       case 'tasks': return <Tasks tasks={tasks} onUpdateTasks={updateTasks} onAddTask={(t) => gateActionWithAd(() => updateTasks([...tasks, t]), 5)} />;
@@ -138,18 +139,18 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
+    <div className="flex h-screen overflow-hidden bg-[#fcfaff] font-sans">
       {/* SIDEBAR */}
-      <aside className={`card-surface border-r transition-all duration-300 ease-in-out flex flex-col z-50 fixed lg:relative h-full ${isSidebarOpen ? 'w-72 translate-x-0 shadow-2xl' : 'w-0 -translate-x-full lg:w-24 lg:translate-x-0 overflow-hidden'}`}>
+      <aside className={`bg-brand-deep transition-all duration-500 ease-in-out flex flex-col z-50 fixed lg:relative h-full ${isSidebarOpen ? 'w-72 translate-x-0 shadow-2xl' : 'w-0 -translate-x-full lg:w-24 lg:translate-x-0 overflow-hidden'}`}>
         <div className="p-8 flex items-center justify-between h-24">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shrink-0">
-              <GraduationCap size={24} />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-festive-gradient rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shrink-0 rotate-3">
+              <GraduationCap size={28} />
             </div>
-            {isSidebarOpen && <span className="font-extrabold text-lg text-slate-800">Assistant</span>}
+            {isSidebarOpen && <span className="font-black text-xl text-white tracking-tight">Assistant</span>}
           </div>
         </div>
-        <nav className="flex-1 px-4 mt-4 space-y-1 overflow-y-auto no-scrollbar">
+        <nav className="flex-1 px-4 mt-8 space-y-2 overflow-y-auto no-scrollbar">
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -157,19 +158,21 @@ const App: React.FC = () => {
                 setCurrentView(item.id as View);
                 if (window.innerWidth < 1024) setIsSidebarOpen(false);
               }}
-              className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-xl transition-all ${
-                currentView === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50'
+              className={`w-full flex items-center gap-5 px-6 py-4 rounded-[1.5rem] transition-all duration-300 ${
+                currentView === item.id 
+                ? 'bg-festive-gradient text-white shadow-xl shadow-indigo-900/40 scale-105' 
+                : 'text-indigo-300/60 hover:text-white hover:bg-white/5'
               }`}
             >
-              <item.icon size={20} />
-              {isSidebarOpen && <span className="font-bold text-sm">{item.label}</span>}
+              <item.icon size={22} strokeWidth={2.5} />
+              {isSidebarOpen && <span className="font-black text-sm uppercase tracking-widest">{item.label}</span>}
             </button>
           ))}
         </nav>
         {isSidebarOpen && (
-          <div className="p-6">
-            <button onClick={() => gateActionWithAd(() => {}, 10)} className="w-full flex items-center justify-center gap-3 p-4 bg-yellow-400 text-yellow-950 rounded-2xl font-black active:scale-95 transition-all shadow-lg hover:bg-yellow-300">
-               <Play size={20} /> Free +10 Pts
+          <div className="p-8">
+            <button onClick={() => gateActionWithAd(() => {}, 10)} className="w-full flex items-center justify-center gap-3 p-5 bg-brand-orange text-white rounded-[2rem] font-black hover:scale-105 transition-all shadow-xl shadow-orange-950/20 active:scale-95 uppercase text-xs tracking-[0.2em]">
+               <Play size={18} fill="currentColor" /> +10 Scholar Pts
             </button>
           </div>
         )}
@@ -177,39 +180,39 @@ const App: React.FC = () => {
 
       {/* MAIN AREA */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        <header className="h-16 lg:h-24 border-b card-surface flex items-center justify-between px-6 lg:px-12 sticky top-0 z-40 bg-white/80 backdrop-blur-md">
-          <div className="flex items-center gap-4">
-             <div className="w-10 h-10 bg-blue-600 rounded-lg lg:hidden flex items-center justify-center text-white shrink-0">
-                <GraduationCap size={18} />
+        <header className="h-20 lg:h-28 border-b border-slate-50 bg-white/80 backdrop-blur-xl flex items-center justify-between px-8 lg:px-16 sticky top-0 z-40">
+          <div className="flex items-center gap-6">
+             <div className="w-12 h-12 bg-festive-gradient rounded-xl lg:hidden flex items-center justify-center text-white shrink-0 shadow-lg">
+                <GraduationCap size={24} />
              </div>
-             <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg shadow-sm">
-               <Coins className="text-yellow-500" size={16} />
-               <span className="font-black text-blue-700 text-sm">{points}</span>
+             <div className="flex items-center gap-3 px-5 py-2.5 bg-indigo-50 border border-indigo-100 rounded-2xl shadow-sm">
+               <Coins className="text-brand-orange" size={20} />
+               <span className="font-black text-brand-purple text-lg">{points}</span>
              </div>
           </div>
           
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-            className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors ml-auto lg:hidden"
+            className="p-3 text-brand-deep hover:bg-slate-50 rounded-2xl transition-all ml-auto lg:hidden border border-slate-100 shadow-sm"
           >
-            {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            {isSidebarOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 lg:p-12 no-scrollbar">
-          <div className="max-w-6xl mx-auto pb-20">{renderContent()}</div>
+        <div className="flex-1 overflow-y-auto p-6 lg:p-16 no-scrollbar">
+          <div className="max-w-6xl mx-auto pb-32">{renderContent()}</div>
         </div>
 
         {/* Achievement Unlock Popup */}
         {unlockedBadge && (
-          <div className="fixed bottom-10 right-10 z-[110] animate-in slide-in-from-right-8 fade-in">
-            <div className="bg-white border-2 border-yellow-400 p-6 rounded-3xl shadow-2xl flex items-center gap-4 max-w-sm">
-              <div className="w-14 h-14 bg-yellow-400 text-yellow-950 rounded-2xl flex items-center justify-center shadow-lg shadow-yellow-100 shrink-0">
-                <Trophy size={32} />
+          <div className="fixed bottom-12 right-12 z-[110] animate-in slide-in-from-right-12 fade-in duration-500">
+            <div className="bg-brand-deep text-white p-8 rounded-[3rem] shadow-2xl flex items-center gap-6 border-2 border-brand-orange/30">
+              <div className="w-16 h-16 bg-brand-orange text-white rounded-[1.5rem] flex items-center justify-center shadow-2xl rotate-12 shrink-0">
+                <Trophy size={36} strokeWidth={2.5} />
               </div>
               <div>
-                <h4 className="font-black text-slate-800 text-lg">Badge Unlocked!</h4>
-                <p className="text-sm font-bold text-slate-500">{unlockedBadge.title}</p>
+                <h4 className="font-black text-2xl tracking-tight">Milestone!</h4>
+                <p className="text-indigo-200 font-bold uppercase text-[10px] tracking-widest">{unlockedBadge.title}</p>
               </div>
             </div>
           </div>
@@ -218,31 +221,31 @@ const App: React.FC = () => {
 
       {/* AD VERIFICATION OVERLAY */}
       {isAdPlaying && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl relative p-10 text-center animate-in zoom-in-95">
-             <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
-                <Sparkles size={48} className="animate-pulse" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-deep/90 backdrop-blur-xl p-6 animate-in fade-in duration-500">
+          <div className="bg-white w-full max-w-sm rounded-[3.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] relative p-12 text-center animate-in zoom-in-95">
+             <div className="w-28 h-28 bg-brand-orange/10 text-brand-orange rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 shadow-inner">
+                <Sparkles size={56} className="animate-pulse" />
              </div>
-             <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">Security Verification</h3>
-             <p className="text-slate-500 font-semibold mb-10 leading-relaxed">
-               Please click the link below and wait 5 seconds to verify and earn your <span className="text-blue-600 font-black">+{pendingPoints || 'Bonus'} points</span>!
+             <h3 className="text-3xl font-black text-brand-deep mb-4 tracking-tighter">Human Check</h3>
+             <p className="text-slate-500 font-semibold mb-12 leading-relaxed">
+               Help us verify and unlock your rewards. <span className="text-brand-orange font-black">+{pendingPoints || 'Bonus'} points</span> incoming!
              </p>
              
              {!hasClickedAd ? (
-               <button onClick={handleAdClick} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-100 flex items-center justify-center gap-3 hover:bg-blue-700 active:scale-95 transition-all">
-                 <ExternalLink size={24} /> Start Verification
+               <button onClick={handleAdClick} className="w-full py-6 bg-brand-purple text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-purple-200 flex items-center justify-center gap-4 hover:bg-brand-deep transition-all active:scale-95">
+                 <ExternalLink size={24} /> Verify Now
                </button>
              ) : adCountdown > 0 ? (
-               <div className="w-full py-5 bg-slate-100 text-slate-400 rounded-2xl font-black text-lg border-2 border-dashed border-slate-200">
-                 Verifying... {adCountdown}s
+               <div className="w-full py-6 bg-slate-50 text-slate-300 rounded-[2rem] font-black text-xl border-4 border-dashed border-slate-100">
+                 {adCountdown}s
                </div>
              ) : (
-               <button onClick={claimRewardAndProceed} className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-100 flex items-center justify-center gap-3 animate-in fade-in slide-in-from-bottom-2">
-                 <CheckCircle size={24} /> Confirm & Claim
+               <button onClick={claimRewardAndProceed} className="w-full py-6 bg-emerald-500 text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-emerald-200 flex items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-4">
+                 <CheckCircle size={24} /> Unlock Reward
                </button>
              )}
              
-             <button onClick={() => setIsAdPlaying(false)} className="mt-8 text-sm font-bold text-slate-300 hover:text-slate-500 transition-colors uppercase tracking-widest">Skip for now</button>
+             <button onClick={() => setIsAdPlaying(false)} className="mt-10 text-[10px] font-black text-slate-300 hover:text-brand-deep transition-all uppercase tracking-[0.4em]">Cancel Request</button>
           </div>
         </div>
       )}

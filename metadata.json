@@ -3,6 +3,7 @@
   "description": "A comprehensive student productivity suite featuring task management, weekly timetables, daily routines, and a Gemini-powered AI study coach.",
   "requestFramePermissions": [
     "microphone",
-    "camera"
+    "camera",
+    "geolocation"
   ]
 }

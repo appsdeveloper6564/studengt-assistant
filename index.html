@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#6366f1">
     <meta name="description" content="Student Assistant Pro - Task management and AI Study Coaching.">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135810.png">
@@ -12,11 +13,36 @@
     <script type='text/javascript' src='https://pl28355177.effectivegatecpm.com/9b/d3/a8/9bd3a8ce89b74f8cf36e78d15fe3090a.js'></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                blue: '#2563eb',
+                orange: '#f97316',
+                purple: '#8b5cf6',
+                deep: '#1e1b4b'
+              }
+            }
+          }
+        }
+      }
+    </script>
     <style>
-        :root { --bg-main: #f8fafc; --bg-card: #ffffff; --text-main: #0f172a; --border-color: #e2e8f0; }
+        :root { --bg-main: #fcfaff; --bg-card: #ffffff; --text-main: #0f172a; --border-color: #f1f5f9; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-main); color: var(--text-main); margin: 0; overflow: hidden; }
         #root { height: 100vh; width: 100vw; }
-        .bg-academic { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+        .bg-festive-gradient { background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 50%, #f97316 100%); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @keyframes float {
+          0% { transform: translateY(0px) rotate(12deg); }
+          50% { transform: translateY(-10px) rotate(14deg); }
+          100% { transform: translateY(0px) rotate(12deg); }
+        }
+        .illustration-float { animation: float 6s ease-in-out infinite; }
     </style>
 <script type="importmap">
 {
@@ -35,15 +61,6 @@
 </head>
 <body>
     <div id="root"></div>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('PWA Ready'))
-            .catch(err => console.warn('PWA skipped in preview'));
-        });
-      }
-    </script>
     <script type="module" src="./index.tsx"></script>
 </body>
 </html>

@@ -16,6 +16,7 @@ export interface TaskItem {
   isCompleted: boolean;
   priority: Priority;
   category?: string;
+  durationMinutes?: number;
 }
 
 export interface TimetableEntry {
@@ -32,6 +33,14 @@ export interface Routine {
   title: string;
   time: string;
   isCompleted: boolean;
+  durationMinutes?: number;
+}
+
+export interface Exam {
+  id: string;
+  name: string;
+  date: string;
+  color: string;
 }
 
 export interface Achievement {
@@ -45,4 +54,4 @@ export interface Achievement {
   unlockedAt?: string;
 }
 
-export type View = 'dashboard' | 'calendar' | 'tasks' | 'timetable' | 'routine' | 'ai-coach' | 'settings' | 'achievements';
+export type View = 'dashboard' | 'calendar' | 'tasks' | 'timetable' | 'routine' | 'ai-coach' | 'settings' | 'achievements' | 'focus-timer';
