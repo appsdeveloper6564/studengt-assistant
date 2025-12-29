@@ -1,0 +1,19 @@
+
+SIMPLE STEPS FOR BEGINNER:
+
+1. OFFLINE:
+   - Make sure all files (App.tsx, index.html, package.json) are in ONE folder.
+   - Open this folder in VS Code.
+
+2. GET INTERNET (FOR 10 MINS):
+   - Open VS Code Terminal (Ctrl + `)
+   - Type: npm install
+   - Type: npx cap init
+   - Type: npx cap add android
+
+3. MOBILE BUILD:
+   - Every time you change your code, type: npx cap sync
+   - Then type: npx cap open android
+   - In Android Studio, click the GREEN PLAY button to install on your phone.
+
+NOTE: You must have "Android Studio" installed on your computer for the last step!
