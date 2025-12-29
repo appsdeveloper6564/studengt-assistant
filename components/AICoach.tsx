@@ -6,6 +6,7 @@ import { getAIStudyAdvice } from '../services/gemini';
 
 interface AICoachProps {
   tasks: TaskItem[];
+  onAIConsult?: () => void;
 }
 
 interface Message {
@@ -13,7 +14,7 @@ interface Message {
   content: string;
 }
 
-const AICoach: React.FC<AICoachProps> = ({ tasks }) => {
+const AICoach: React.FC<AICoachProps> = ({ tasks, onAIConsult }) => {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'ai', content: "Hi! I'm your Student AI Coach. I can help you break down complex tasks, suggest study schedules, or explain difficult concepts. How can I help you excel today?" }
   ]);
@@ -46,6 +47,9 @@ const AICoach: React.FC<AICoachProps> = ({ tasks }) => {
     const aiResponse = await getAIStudyAdvice(context);
     setMessages(prev => [...prev, { role: 'ai', content: aiResponse || "Sorry, I couldn't process that." }]);
     setIsLoading(false);
+    
+    // Trigger achievement check
+    if (onAIConsult) onAIConsult();
   };
 
   return (

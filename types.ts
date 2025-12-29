@@ -34,4 +34,15 @@ export interface Routine {
   isCompleted: boolean;
 }
 
-export type View = 'dashboard' | 'tasks' | 'timetable' | 'routine' | 'ai-coach' | 'settings';
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  requirement: number;
+  type: 'tasks' | 'points' | 'routine' | 'ai';
+  isUnlocked: boolean;
+  unlockedAt?: string;
+}
+
+export type View = 'dashboard' | 'tasks' | 'timetable' | 'routine' | 'ai-coach' | 'settings' | 'achievements';
