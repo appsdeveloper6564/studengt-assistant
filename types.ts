@@ -40,9 +40,9 @@ export interface Achievement {
   description: string;
   icon: string;
   requirement: number;
-  type: 'tasks' | 'points' | 'routine' | 'ai';
+  type: 'tasks' | 'points' | 'routine' | 'ai' | 'custom';
   isUnlocked: boolean;
   unlockedAt?: string;
 }
 
-export type View = 'dashboard' | 'tasks' | 'timetable' | 'routine' | 'ai-coach' | 'settings' | 'achievements';
+export type View = 'dashboard' | 'calendar' | 'tasks' | 'timetable' | 'routine' | 'ai-coach' | 'settings' | 'achievements';

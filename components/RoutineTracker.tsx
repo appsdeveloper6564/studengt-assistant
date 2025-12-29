@@ -5,127 +5,129 @@ import { CheckCircle2, Circle, Plus, Trash2, LayoutList } from 'lucide-react';
 
 interface RoutineTrackerProps {
   routines: Routine[];
-  setRoutines: (routines: Routine[]) => void;
+  onUpdateRoutines: (routines: Routine[]) => void;
+  onAddRoutine: (routine: Routine) => void;
 }
 
-const RoutineTracker: React.FC<RoutineTrackerProps> = ({ routines, setRoutines }) => {
+const RoutineTracker: React.FC<RoutineTrackerProps> = ({ routines, onUpdateRoutines, onAddRoutine }) => {
   const [newTitle, setNewTitle] = useState('');
   const [newTime, setNewTime] = useState('');
 
-  const addRoutine = (e: React.FormEvent) => {
+  const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
-    const newRoutine: Routine = {
+    
+    onAddRoutine({
       id: crypto.randomUUID(),
       title: newTitle,
       time: newTime || 'Anytime',
       isCompleted: false,
-    };
-    setRoutines([...routines, newRoutine]);
+    });
+    
     setNewTitle('');
     setNewTime('');
   };
 
   const toggleRoutine = (id: string) => {
-    setRoutines(routines.map(r => r.id === id ? { ...r, isCompleted: !r.isCompleted } : r));
+    onUpdateRoutines(routines.map(r => r.id === id ? { ...r, isCompleted: !r.isCompleted } : r));
   };
 
   const deleteRoutine = (id: string) => {
-    setRoutines(routines.filter(r => r.id !== id));
+    onUpdateRoutines(routines.filter(r => r.id !== id));
   };
 
   const resetAll = () => {
-    setRoutines(routines.map(r => ({ ...r, isCompleted: false })));
+    onUpdateRoutines(routines.map(r => ({ ...r, isCompleted: false })));
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-in slide-in-from-right-4 duration-500">
-      <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-         <div className="flex items-center justify-between mb-8">
+    <div className="max-w-3xl mx-auto space-y-10 animate-in slide-in-from-right-4 duration-500 pb-12">
+      <div className="bg-white p-10 lg:p-12 rounded-[3rem] shadow-sm border border-slate-100">
+         <div className="flex items-center justify-between mb-10">
             <div>
-               <h2 className="text-3xl font-bold text-slate-800">Daily Routine</h2>
-               <p className="text-slate-500">Track your daily habits and consistency.</p>
+               <h2 className="text-3xl font-black text-slate-800 tracking-tight">Daily Habits</h2>
+               <p className="text-slate-400 font-bold mt-1">Consistency is the secret to mastery.</p>
             </div>
             <button 
               onClick={resetAll}
-              className="px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+              className="px-6 py-3 text-sm font-black text-blue-600 hover:bg-blue-50 rounded-2xl transition-all uppercase tracking-widest border border-blue-100"
             >
-              Reset for Today
+              Reset
             </button>
          </div>
 
-         <form onSubmit={addRoutine} className="flex gap-3 mb-8">
+         <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-4 mb-10">
             <input 
               required
               type="text" 
-              placeholder="e.g., Morning reading" 
+              placeholder="e.g., Morning Meditation" 
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
-              className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors"
+              className="flex-1 px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-blue-500 font-bold transition-all shadow-sm"
             />
             <input 
               type="text" 
               placeholder="08:00 AM" 
               value={newTime}
               onChange={e => setNewTime(e.target.value)}
-              className="w-32 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full sm:w-40 px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-blue-500 font-bold transition-all shadow-sm"
             />
-            <button type="submit" className="p-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-transform active:scale-95 shadow-lg shadow-blue-200">
-              <Plus size={24} />
+            <button type="submit" className="py-4 px-8 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all active:scale-95 shadow-xl shadow-blue-100 font-black uppercase text-sm tracking-widest">
+              Add Habit
             </button>
          </form>
 
-         <div className="space-y-3">
+         <div className="space-y-4">
             {routines.map(item => (
               <div 
                 key={item.id} 
-                className={`flex items-center gap-4 p-5 rounded-3xl transition-all border ${
+                className={`flex items-center gap-5 p-6 rounded-[2rem] transition-all border group ${
                   item.isCompleted 
                     ? 'bg-emerald-50 border-emerald-100 text-emerald-800' 
-                    : 'bg-white border-slate-100 hover:border-blue-200'
+                    : 'bg-white border-slate-100 hover:border-blue-200 hover:shadow-md'
                 }`}
               >
                 <button 
                   onClick={() => toggleRoutine(item.id)}
-                  className={`transition-colors ${item.isCompleted ? 'text-emerald-500' : 'text-slate-300 hover:text-blue-500'}`}
+                  className={`transition-all hover:scale-125 ${item.isCompleted ? 'text-emerald-500' : 'text-slate-200 hover:text-blue-500'}`}
                 >
-                   {item.isCompleted ? <CheckCircle2 size={28} /> : <Circle size={28} />}
+                   {item.isCompleted ? <CheckCircle2 size={32} /> : <Circle size={32} />}
                 </button>
                 <div className="flex-1">
-                   <h4 className={`text-lg font-bold leading-none ${item.isCompleted ? 'line-through opacity-60' : ''}`}>
+                   <h4 className={`text-xl font-black leading-tight mb-1 ${item.isCompleted ? 'line-through opacity-60' : 'text-slate-800'}`}>
                      {item.title}
                    </h4>
-                   <span className={`text-xs font-medium uppercase tracking-wider ${item.isCompleted ? 'opacity-50' : 'text-slate-400'}`}>
+                   <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${item.isCompleted ? 'opacity-50' : 'text-blue-400'}`}>
                      {item.time}
                    </span>
                 </div>
                 <button 
                   onClick={() => deleteRoutine(item.id)}
-                  className="p-2 text-slate-300 hover:text-red-500 transition-colors"
+                  className="p-3 text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                 >
                    <Trash2 size={20} />
                 </button>
               </div>
             ))}
             {routines.length === 0 && (
-              <div className="text-center py-16 text-slate-400">
-                 <LayoutList size={64} className="mx-auto mb-4 opacity-20" />
-                 <p className="text-lg">No routines set. Consistency is key!</p>
+              <div className="text-center py-20 text-slate-300">
+                 <LayoutList size={80} className="mx-auto mb-6 opacity-5" />
+                 <p className="text-xl font-black uppercase tracking-[0.2em]">No Habits Set</p>
               </div>
             )}
          </div>
 
          {routines.length > 0 && (
-           <div className="mt-10 p-6 bg-slate-50 rounded-3xl flex items-center justify-between">
-              <div>
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Today's Progress</div>
-                <div className="text-3xl font-black text-slate-800">
+           <div className="mt-12 p-8 bg-slate-50 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-100">
+              <div className="text-center md:text-left">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Routine Accuracy</div>
+                <div className="text-4xl font-black text-slate-800">
                   {Math.round((routines.filter(r => r.isCompleted).length / routines.length) * 100)}%
                 </div>
               </div>
-              <div className="w-1/2 h-3 bg-slate-200 rounded-full overflow-hidden">
+              <div className="w-full md:w-2/3 h-4 bg-slate-200 rounded-full overflow-hidden shadow-inner">
                  <div 
-                  className="h-full bg-emerald-500 transition-all duration-700 ease-out" 
+                  className="h-full bg-emerald-500 transition-all duration-1000 ease-out shadow-lg" 
                   style={{ width: `${(routines.filter(r => r.isCompleted).length / routines.length) * 100}%` }}
                  />
               </div>

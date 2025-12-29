@@ -1,6 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 
+// Strictly using process.env.API_KEY as per system requirements
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const getAIStudyAdvice = async (context: string) => {
@@ -9,16 +10,16 @@ export const getAIStudyAdvice = async (context: string) => {
       model: "gemini-3-pro-preview",
       contents: context,
       config: {
-        systemInstruction: `You are an expert student assistant and question solver. 
-        Your goal is to provide deep, accurate, and step-by-step solutions to any academic question. 
-        If the user asks a math problem, solve it clearly. If they ask for a summary, provide a comprehensive one. 
-        Always be professional, concise, and helpful.`,
-        temperature: 0.5,
+        systemInstruction: `You are an expert student assistant and academic question solver. 
+        Your goal is to provide accurate, step-by-step solutions for math, science, and general study queries. 
+        Be professional, encouraging, and concise.`,
+        temperature: 0.7,
       },
     });
+    // response.text is a property, not a method
     return response.text;
   } catch (error) {
     console.error("AI Assistant Error:", error);
-    return "Sorry, I'm currently unavailable to process this question. Please ensure your points are enough or try again later!";
+    return "I'm having trouble connecting to my academic database. Please check your internet or ensure you have enough points!";
   }
 };
