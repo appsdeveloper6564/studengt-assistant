@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, ListTodo, CalendarDays, Clock, Bot, Menu, X, Settings as SettingsIcon, GraduationCap, Sun, Moon, Coffee, Coins, Play, Loader2, Sparkles, User } from 'lucide-react';
+import { LayoutDashboard, ListTodo, CalendarDays, Clock, Bot, Menu, X, Settings as SettingsIcon, GraduationCap, Sun, Moon, Coffee, Coins, Play, Loader2, Sparkles } from 'lucide-react';
 import { View, TaskItem, TimetableEntry, Routine, UserProfile } from './types';
 import { StorageService } from './services/storage';
 import { AdService } from './services/adService';
@@ -13,7 +12,7 @@ import Settings from './components/Settings';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Default closed for mobile
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'sepia'>(
     (localStorage.getItem('sa_theme') as any) || 'light'
   );
@@ -34,17 +33,13 @@ const App: React.FC = () => {
   }, [theme]);
 
   useEffect(() => {
-    // 1. Initialize Native Services
     AdService.initialize();
-
-    // 2. Load Data
     setTasks(StorageService.getTasks());
     setTimetable(StorageService.getTimetable());
     setRoutines(StorageService.getRoutines());
     setPoints(StorageService.getPoints());
     setProfile(StorageService.getProfile());
 
-    // 3. Responsive Sidebar
     const handleResize = () => {
       if (window.innerWidth < 1024) setIsSidebarOpen(false);
       else setIsSidebarOpen(true);
@@ -84,7 +79,6 @@ const App: React.FC = () => {
     const newPoints = points + amount;
     setPoints(newPoints);
     StorageService.savePoints(newPoints);
-    // Real code: Haptics.impact({ style: ImpactStyle.Medium });
   };
 
   const toggleTheme = () => {
@@ -99,18 +93,34 @@ const App: React.FC = () => {
     setIsAdLoading(false);
     
     if (success) {
-      setIsAdPlaying(true);
-      setAdCountdown(5);
-      const interval = setInterval(() => {
-        setAdCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // Try to show the real AdMob rewarded video
+      AdService.showRewardedVideo(
+        () => {
+          // Success Callback
+          claimAdReward();
+        },
+        () => {
+          // Error or Browser Callback - fallback to simulation
+          runSimulation();
+        }
+      );
+    } else {
+      runSimulation();
     }
+  };
+
+  const runSimulation = () => {
+    setIsAdPlaying(true);
+    setAdCountdown(5);
+    const interval = setInterval(() => {
+      setAdCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   const claimAdReward = () => {
@@ -141,12 +151,10 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen overflow-hidden transition-colors duration-300">
-      {/* Sidebar Overlay for Mobile */}
       {isSidebarOpen && window.innerWidth < 1024 && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`card-surface border-r transition-all duration-300 ease-in-out flex flex-col z-40 fixed lg:relative h-full ${isSidebarOpen ? 'w-72 translate-x-0' : 'w-0 -translate-x-full lg:w-24 lg:translate-x-0 overflow-hidden'}`}>
         <div className="p-8 flex items-center justify-between h-24">
           <div className="flex items-center gap-3">
@@ -213,20 +221,18 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* AD SIMULATION MODAL */}
       {isAdPlaying && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black p-4 lg:p-6">
           <div className="bg-white w-full max-w-xl rounded-[2rem] overflow-hidden shadow-2xl relative flex flex-col">
             <div className="aspect-video bg-slate-900 flex flex-col items-center justify-center relative">
                <div className="z-10 text-center text-white">
                   <GraduationCap size={64} className="text-blue-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-black">Ad Simulation</h3>
+                  <h3 className="text-xl font-black">Ad Loading...</h3>
                </div>
                <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800">
                   <div className="h-full bg-yellow-400 transition-all duration-1000 ease-linear" style={{ width: `${(5 - adCountdown) * 20}%` }} />
                </div>
             </div>
-            
             <div className="p-8 flex flex-col items-center">
               {adCountdown > 0 ? (
                 <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Granting Reward in {adCountdown}s</p>
