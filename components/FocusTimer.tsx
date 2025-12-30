@@ -1,7 +1,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Play, Pause, RotateCcw, Coffee, Zap, Brain, Eye, ListTodo, CheckCircle, Target, ArrowLeft } from 'lucide-react';
+// Added Sparkles to the list of icons imported from lucide-react
+import { Play, Pause, RotateCcw, Coffee, Zap, Brain, Eye, ListTodo, CheckCircle, Target, ArrowLeft, Sparkles } from 'lucide-react';
 import { TaskItem } from '../types';
+import AdsterraAd from './AdsterraAd';
 
 interface FocusTimerProps {
   tasks: TaskItem[];
@@ -26,7 +28,6 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ tasks, onUpdateTasks }) => {
       }, 1000);
     } else if (seconds === 0) {
       setIsActive(false);
-      // Native notification logic would go here
       const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
       audio.play().catch(() => {});
     }
@@ -58,45 +59,38 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ tasks, onUpdateTasks }) => {
     }
   };
 
-  const progress = useMemo(() => {
-    return ((initialSeconds - seconds) / initialSeconds) * 100;
-  }, [seconds, initialSeconds]);
+  const progress = useMemo(() => ((initialSeconds - seconds) / initialSeconds) * 100, [seconds, initialSeconds]);
 
   if (!selectedTaskId) {
     return (
-      <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-700">
-        <div className="bg-white rounded-[3.5rem] p-10 lg:p-16 shadow-2xl border border-slate-50">
-          <div className="flex items-center gap-6 mb-12">
-            <div className="w-16 h-16 bg-brand-purple text-white rounded-[2rem] flex items-center justify-center shadow-xl shadow-purple-100">
-              <Target size={32} />
+      <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in duration-700 pb-20">
+        <div className="bg-[#0f172a] rounded-[4rem] p-12 lg:p-20 shadow-2xl border border-slate-800">
+          <div className="flex items-center gap-8 mb-16">
+            <div className="w-20 h-20 bg-brand-purple text-white rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-brand-purple/20 neon-purple">
+              <Target size={40} />
             </div>
             <div>
-              <h2 className="text-3xl font-black text-brand-deep">Select a Mission</h2>
-              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">Start a timed study session</p>
+              <h2 className="text-5xl font-black text-white tracking-tight">Active Missions</h2>
+              <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-2">Select your next study session</p>
             </div>
           </div>
 
           {pendingTasks.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {pendingTasks.map((task) => (
                 <button
                   key={task.id}
                   onClick={() => handleSelectTask(task)}
-                  className="group flex items-start gap-6 p-8 bg-slate-50 border border-slate-100 rounded-[2.5rem] text-left hover:bg-white hover:border-brand-purple hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                  className="group flex items-start gap-8 p-10 bg-slate-900/50 border border-slate-800 rounded-[3rem] text-left hover:bg-slate-900 hover:border-brand-purple hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all shrink-0">
-                    <ListTodo size={24} />
+                  <div className="w-16 h-16 rounded-[1.5rem] bg-slate-800 border border-slate-700 flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all shrink-0">
+                    <Brain size={32} />
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <h4 className="font-black text-lg text-slate-800 mb-1 truncate">{task.title}</h4>
-                    <div className="flex items-center gap-2">
-                       <span className="text-[10px] font-black uppercase text-brand-orange bg-orange-50 px-2.5 py-1 rounded-lg">
-                         {task.durationMinutes || 45} MINS
-                       </span>
-                       <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${
-                         task.priority === 'High' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'
-                       }`}>
-                         {task.priority}
+                    <h4 className="font-black text-2xl text-white mb-2 truncate group-hover:text-brand-purple transition-colors">{task.title}</h4>
+                    <div className="flex items-center gap-3">
+                       <span className="text-[10px] font-black uppercase text-brand-orange bg-brand-orange/10 border border-brand-orange/20 px-4 py-1.5 rounded-full tracking-widest">
+                         {task.durationMinutes || 45} MINUTE MISSION
                        </span>
                     </div>
                   </div>
@@ -104,96 +98,88 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ tasks, onUpdateTasks }) => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-slate-50/50 rounded-[3rem] border-4 border-dashed border-slate-100">
-              <Brain size={64} className="mx-auto text-slate-200 mb-6" />
-              <p className="font-black text-slate-400 uppercase tracking-widest text-sm">No pending tasks found</p>
-              <p className="text-xs text-slate-300 font-bold mt-2">Add a task first to start a timed session.</p>
+            <div className="text-center py-24 bg-slate-900/30 rounded-[4rem] border-4 border-dashed border-slate-800">
+              <Sparkles size={80} className="mx-auto text-slate-800 mb-8" />
+              <p className="font-black text-slate-600 uppercase tracking-[0.4em] text-sm">Awaiting fresh missions...</p>
             </div>
           )}
         </div>
+        
+        <AdsterraAd id="55ec911eca20ef6f6a3a27adad217f37" format="banner" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-10 animate-in zoom-in-95 duration-500">
-      <div className="bg-white rounded-[4rem] p-12 lg:p-20 shadow-2xl border border-slate-50 text-center relative overflow-hidden">
-        {/* Progress Bar Background */}
-        <div className="absolute top-0 left-0 w-full h-3 bg-slate-50">
+    <div className="max-w-5xl mx-auto space-y-12 animate-in zoom-in-95 duration-500 pb-20">
+      <div className="bg-[#0f172a] rounded-[5rem] p-16 lg:p-24 shadow-2xl border border-slate-800 text-center relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-4 bg-slate-900 shadow-inner">
            <div 
-             className="h-full bg-gradient-to-r from-brand-purple to-brand-orange transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(249,115,22,0.4)]" 
+             className="h-full bg-gradient-to-r from-brand-purple via-brand-orange to-brand-blue transition-all duration-1000 ease-linear shadow-[0_0_20px_rgba(249,115,22,0.4)]" 
              style={{ width: `${progress}%` }}
            />
         </div>
 
         <button 
           onClick={() => setSelectedTaskId(null)}
-          className="absolute top-8 left-8 p-4 text-slate-300 hover:text-brand-purple hover:bg-purple-50 rounded-2xl transition-all"
+          className="absolute top-12 left-12 p-5 text-slate-500 hover:text-white hover:bg-slate-800 rounded-3xl transition-all shadow-xl active:scale-90"
         >
-          <ArrowLeft size={24} />
+          <ArrowLeft size={32} />
         </button>
 
         <div className="flex flex-col items-center">
-          <div className="mb-10 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-50 text-brand-orange rounded-full text-[10px] font-black uppercase tracking-widest mb-4 border border-orange-100">
-               <Zap size={12} fill="currentColor" /> Live Mission
+          <div className="mb-12">
+            <div className="inline-flex items-center gap-3 px-6 py-2.5 bg-brand-orange/10 text-brand-orange rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-6 border border-brand-orange/20">
+               <Zap size={14} fill="currentColor" className="animate-pulse" /> Mission Tracking Active
             </div>
-            <h2 className="text-3xl lg:text-4xl font-black text-brand-deep tracking-tight mb-2 max-w-lg leading-tight">
+            <h2 className="text-5xl lg:text-6xl font-black text-white tracking-tighter mb-4 max-w-2xl leading-[1.1]">
               {activeTask?.title}
             </h2>
-            <p className="text-xs font-black text-slate-300 uppercase tracking-[0.3em]">Time to complete</p>
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-[0.5em] opacity-60">Strategic focus window</p>
           </div>
 
-          <h1 className="text-8xl lg:text-9xl font-black mb-12 tracking-tighter text-brand-deep tabular-nums">
-            {formatTime(seconds)}
-          </h1>
+          <div className="relative mb-20">
+             <div className="absolute inset-0 bg-brand-blue/5 rounded-full blur-3xl -z-10 animate-pulse"></div>
+             <h1 className="text-[10rem] lg:text-[14rem] font-black tracking-tighter text-white tabular-nums drop-shadow-[0_0_30px_rgba(59,130,246,0.3)] select-none">
+               {formatTime(seconds)}
+             </h1>
+          </div>
 
-          <div className="flex gap-8 mb-16">
+          <div className="flex gap-10 mb-20 scale-110 lg:scale-125">
             <button 
               onClick={() => setIsActive(!isActive)}
-              className={`w-24 h-24 rounded-[2rem] flex items-center justify-center shadow-2xl transition-all active:scale-90 ${
-                isActive ? 'bg-slate-100 text-slate-400 border border-slate-200' : 'bg-brand-purple text-white shadow-purple-200'
+              className={`w-28 h-28 rounded-[2.5rem] flex items-center justify-center shadow-2xl transition-all active:scale-[0.85] ${
+                isActive ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-brand-blue text-white shadow-brand-blue/30 neon-blue'
               }`}
             >
-              {isActive ? <Pause size={40} /> : <Play size={40} className="ml-2" />}
+              {isActive ? <Pause size={48} strokeWidth={3} /> : <Play size={48} strokeWidth={3} className="ml-2" />}
             </button>
             <button 
               onClick={() => { setIsActive(false); setSeconds(initialSeconds); }}
-              className="w-24 h-24 bg-white border-2 border-slate-100 text-slate-300 rounded-[2rem] flex items-center justify-center hover:border-brand-orange hover:text-brand-orange transition-all shadow-xl shadow-slate-100"
+              className="w-28 h-28 bg-slate-900 border-2 border-slate-800 text-slate-600 rounded-[2.5rem] flex items-center justify-center hover:border-white hover:text-white transition-all shadow-xl active:scale-[0.85]"
             >
-              <RotateCcw size={32} />
+              <RotateCcw size={40} />
             </button>
           </div>
 
-          <div className="w-full flex flex-col sm:flex-row gap-4">
+          <div className="w-full flex flex-col sm:flex-row gap-6 max-w-2xl">
              <button 
                onClick={handleMarkComplete}
-               className="flex-1 py-6 bg-emerald-500 text-white rounded-[2rem] font-black flex items-center justify-center gap-3 shadow-2xl shadow-emerald-200 hover:bg-emerald-600 transition-all active:scale-95"
+               className="flex-1 py-7 bg-emerald-500 text-white rounded-3xl font-black flex items-center justify-center gap-4 shadow-2xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-95 text-lg uppercase tracking-widest"
              >
-               <CheckCircle size={24} /> I've Finished!
+               <CheckCircle size={28} /> Mission Accomplished
              </button>
              <button 
                onClick={() => { setIsActive(false); setSeconds(5 * 60); setMode('break'); }}
-               className="px-10 py-6 bg-slate-50 text-slate-500 border border-slate-200 rounded-[2rem] font-black flex items-center justify-center gap-3 hover:bg-white hover:border-brand-purple hover:text-brand-purple transition-all"
+               className="px-12 py-7 bg-slate-900 text-slate-500 border border-slate-800 rounded-3xl font-black flex items-center justify-center gap-4 hover:bg-slate-800 hover:text-white transition-all text-lg uppercase tracking-widest"
              >
-               <Coffee size={24} /> Take a Break
+               <Coffee size={28} /> Strategic Break
              </button>
           </div>
         </div>
       </div>
-
-      <div className="bg-brand-purple/5 border border-brand-purple/10 p-8 rounded-[3rem] flex items-center gap-6 relative overflow-hidden group">
-         <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:rotate-12 transition-transform duration-700">
-            <Brain size={120} />
-         </div>
-         <div className="w-16 h-16 bg-white border border-purple-100 text-brand-purple rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
-            <Eye size={32} />
-         </div>
-         <div className="relative z-10">
-            <h4 className="text-xl font-black text-brand-deep">Concentration Mode</h4>
-            <p className="text-sm font-semibold text-slate-500">The human brain focuses best for {activeTask?.durationMinutes || 45} minutes. Stay away from your phone and social media until the timer ends.</p>
-         </div>
-      </div>
+      
+      <AdsterraAd id="55ec911eca20ef6f6a3a27adad217f37" format="banner" />
     </div>
   );
 };

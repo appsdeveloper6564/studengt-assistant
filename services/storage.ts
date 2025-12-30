@@ -1,5 +1,5 @@
 
-import { TaskItem, TimetableEntry, Routine, UserProfile, Achievement } from '../types';
+import { TaskItem, TimetableEntry, Routine, UserProfile, Achievement, Subject } from '../types';
 
 const STORAGE_KEYS = {
   TASKS: 'sa_tasks_v2',
@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   POINTS: 'sa_points_v2',
   PROFILE: 'sa_profile_v2',
   ACHIEVEMENTS: 'sa_achievements_v2',
+  SUBJECTS: 'sa_subjects_v2',
   STREAK_DATE: 'sa_streak_date_v2',
   STREAK_COUNT: 'sa_streak_count_v2'
 };
@@ -30,6 +31,12 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
   { id: '5', title: 'Thinker', description: 'Ask the AI Coach a question', icon: 'Brain', requirement: 1, type: 'ai', isUnlocked: false }
 ];
 
+const INITIAL_SUBJECTS: Subject[] = [
+  { id: '1', name: 'Mathematics', color: '#2563eb' },
+  { id: '2', name: 'Science', color: '#f97316' },
+  { id: '3', name: 'History', color: '#8b5cf6' }
+];
+
 export const StorageService = {
   getTasks: (): TaskItem[] => safeGet(STORAGE_KEYS.TASKS, []),
   saveTasks: (tasks: TaskItem[]) => localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks)),
@@ -45,6 +52,9 @@ export const StorageService = {
 
   getProfile: (): UserProfile => safeGet(STORAGE_KEYS.PROFILE, { name: '', grade: '', school: '', goal: '' }),
   saveProfile: (profile: UserProfile) => localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile)),
+
+  getSubjects: (): Subject[] => safeGet(STORAGE_KEYS.SUBJECTS, INITIAL_SUBJECTS),
+  saveSubjects: (subjects: Subject[]) => localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(subjects)),
 
   getAchievements: (): Achievement[] => safeGet(STORAGE_KEYS.ACHIEVEMENTS, INITIAL_ACHIEVEMENTS),
   saveAchievements: (achievements: Achievement[]) => localStorage.setItem(STORAGE_KEYS.ACHIEVEMENTS, JSON.stringify(achievements)),

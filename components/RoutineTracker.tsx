@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Routine } from '../types';
-import { CheckCircle2, Circle, Plus, Trash2, LayoutList, AlertCircle, Timer } from 'lucide-react';
+import { CheckCircle2, Circle, Plus, Trash2, LayoutList, AlertCircle, Timer, Sparkles } from 'lucide-react';
+import AdsterraAd from './AdsterraAd';
 
 interface RoutineTrackerProps {
   routines: Routine[];
@@ -17,23 +18,7 @@ const RoutineTracker: React.FC<RoutineTrackerProps> = ({ routines, onUpdateRouti
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
-
-    // Check sleep constraints (10 PM to 6 AM)
-    const timeNum = parseInt(newTime.split(':')[0]);
-    const isSleepTime = (timeNum >= 22 || timeNum < 6);
-    
-    if (isSleepTime && !confirm("This routine is planned during your sleep time (10 PM - 6 AM). Are you sure?")) {
-      return;
-    }
-    
-    onAddRoutine({
-      id: crypto.randomUUID(),
-      title: newTitle,
-      time: newTime || 'Anytime',
-      isCompleted: false,
-      durationMinutes: parseInt(newDuration)
-    });
-    
+    onAddRoutine({ id: crypto.randomUUID(), title: newTitle, time: newTime || 'Anytime', isCompleted: false, durationMinutes: parseInt(newDuration) });
     setNewTitle('');
     setNewTime('');
   };
@@ -47,58 +32,55 @@ const RoutineTracker: React.FC<RoutineTrackerProps> = ({ routines, onUpdateRouti
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-10 animate-in slide-in-from-right-4 duration-500 pb-12">
-      <div className="bg-white p-10 lg:p-12 rounded-[3rem] shadow-sm border border-slate-100">
-         <div className="flex items-center justify-between mb-10">
+    <div className="max-w-3xl mx-auto space-y-12 animate-in slide-in-from-right-4 duration-500 pb-20">
+      <div className="bg-[#0f172a] p-10 lg:p-16 rounded-[4rem] border border-slate-800 shadow-2xl">
+         <div className="flex items-center gap-6 mb-12">
+            <div className="w-16 h-16 bg-brand-orange text-white rounded-[2rem] flex items-center justify-center shadow-xl neon-orange">
+               <Sparkles size={32} />
+            </div>
             <div>
-               <h2 className="text-3xl font-black text-slate-800 tracking-tight">Active Habits</h2>
-               <p className="text-slate-400 font-bold mt-1">Sit less, study more, rest deeply.</p>
+               <h2 className="text-4xl font-black text-white tracking-tight">Daily Rituals</h2>
+               <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-1">Consistency creates scholars</p>
             </div>
          </div>
 
-         <form onSubmit={handleAdd} className="space-y-4 mb-10">
+         <form onSubmit={handleAdd} className="space-y-6 mb-16">
             <div className="flex flex-col sm:flex-row gap-4">
-              <input required type="text" placeholder="e.g., Deep Focus Block" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="flex-1 px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 font-bold" />
-              <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} className="w-full sm:w-40 px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold" />
+              <input required type="text" placeholder="Habit name..." value={newTitle} onChange={e => setNewTitle(e.target.value)} className="flex-1 px-8 py-5 bg-slate-900 border border-slate-800 rounded-3xl focus:border-brand-orange text-white font-bold outline-none" />
+              <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} className="w-full sm:w-48 px-8 py-5 bg-slate-900 border border-slate-800 rounded-3xl text-white font-bold outline-none" />
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
-              <select value={newDuration} onChange={e => setNewDuration(e.target.value)} className="flex-1 px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold">
-                <option value="45">45m Focus (Pomodoro)</option>
-                <option value="90">90m Focus (Deep State)</option>
-                <option value="120">120m Focus (Scholar Session)</option>
+              <select value={newDuration} onChange={e => setNewDuration(e.target.value)} className="flex-1 px-8 py-5 bg-slate-900 border border-slate-800 rounded-3xl text-white font-bold outline-none">
+                <option value="45">45m Focus Session</option>
+                <option value="90">90m Deep Work</option>
+                <option value="120">2h Scholarly Pursuit</option>
               </select>
-              <button type="submit" className="py-4 px-10 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all font-black uppercase text-sm shadow-xl shadow-blue-100">Add habit</button>
+              <button type="submit" className="py-5 px-12 bg-brand-orange text-white rounded-3xl hover:bg-orange-600 transition-all font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-orange/20 active:scale-95">Add Ritual</button>
             </div>
          </form>
 
          <div className="space-y-4">
-            {routines.map(item => {
-              const timeNum = parseInt(item.time.split(':')[0]);
-              const isSleepTimeOverlap = !isNaN(timeNum) && (timeNum >= 22 || timeNum < 6);
-
-              return (
-                <div key={item.id} className={`flex items-center gap-5 p-6 rounded-[2rem] transition-all border group ${item.isCompleted ? 'bg-emerald-50 border-emerald-100' : isSleepTimeOverlap ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-100'}`}>
-                  <button onClick={() => toggleRoutine(item.id)} className={`transition-all hover:scale-125 ${item.isCompleted ? 'text-emerald-500' : 'text-slate-200 hover:text-blue-500'}`}>
-                     {item.isCompleted ? <CheckCircle2 size={32} /> : <Circle size={32} />}
-                  </button>
-                  <div className="flex-1">
-                     <div className="flex items-center gap-2">
-                        <h4 className={`text-xl font-black ${item.isCompleted ? 'line-through opacity-60' : 'text-slate-800'}`}>{item.title}</h4>
-                        {isSleepTimeOverlap && <AlertCircle size={16} className="text-yellow-500" title="Planned during sleep hours" />}
-                     </div>
-                     <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">{item.time}</span>
-                        {item.durationMinutes && (
-                          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1"><Timer size={12}/> {item.durationMinutes}m Session</span>
-                        )}
-                     </div>
-                  </div>
-                  <button onClick={() => deleteRoutine(item.id)} className="p-3 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={20} /></button>
+            {routines.map(item => (
+              <div key={item.id} className={`flex items-center gap-6 p-6 rounded-[2.5rem] transition-all border group ${item.isCompleted ? 'bg-emerald-500/5 border-emerald-500/20 grayscale' : 'bg-slate-900/50 border-slate-800 hover:border-brand-orange/40 hover:bg-slate-900'}`}>
+                <button onClick={() => toggleRoutine(item.id)} className={`transition-all hover:scale-125 ${item.isCompleted ? 'text-emerald-500' : 'text-slate-700 hover:text-brand-orange'}`}>
+                   {item.isCompleted ? <CheckCircle2 size={40} /> : <Circle size={40} />}
+                </button>
+                <div className="flex-1">
+                   <h4 className={`text-2xl font-black tracking-tight ${item.isCompleted ? 'line-through text-slate-600' : 'text-white'}`}>{item.title}</h4>
+                   <div className="flex items-center gap-4 mt-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-brand-orange">{item.time}</span>
+                      {item.durationMinutes && (
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1"><Timer size={12}/> {item.durationMinutes}m ritual</span>
+                      )}
+                   </div>
                 </div>
-              );
-            })}
+                <button onClick={() => deleteRoutine(item.id)} className="p-3 text-slate-800 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={24} /></button>
+              </div>
+            ))}
          </div>
       </div>
+      
+      <AdsterraAd id="55ec911eca20ef6f6a3a27adad217f37" format="banner" />
     </div>
   );
 };

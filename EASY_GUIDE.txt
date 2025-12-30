@@ -1,0 +1,14 @@
+
+BHAI, REAL ADS LAG GAYE HAIN!
+
+APP ID: ca-app-pub-9066646910248492~3992571465
+REWARDED ID: ca-app-pub-9066646910248492/3362209596
+
+Ab jab aap APK banaoge, toh asli ads dikhenge.
+
+YAAD RAKHNA:
+1. Apne phone pe khud ke ads baar-baar mat dekhna, warna Google account ban kar dega.
+2. Nayi IDs ko active hone mein thoda time lagta hai.
+3. APK banane ke liye hamesha 'npm run build' ke baad 'npx cap sync' zarur karna.
+
+BAAKI SAB SET HAI!

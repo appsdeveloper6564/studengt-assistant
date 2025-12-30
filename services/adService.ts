@@ -1,22 +1,27 @@
+
 /**
- * Adsterra Direct Link Service
+ * Adsterra High-Conversion Ad Service
  */
 export const AdService = {
-  // New Reward Direct Link
-  DIRECT_LINK: "https://www.effectivegatecpm.com/q8v0gdes9?key=2879c43bccd299b0327ef65449d90f71", 
+  // Your provided Adsterra Direct Link (Smartlink)
+  SMART_LINK: "https://www.effectivegatecpm.com/q8v0gdes9?key=2879c43bccd299b0327ef65449d90f71", 
 
   initialize: async () => {
-    console.log("Adsterra initialized.");
-  },
-
-  loadAd: async (): Promise<boolean> => {
-    return navigator.onLine;
+    console.log("Scholar Hub: Adsterra Ecosystem Online.");
   },
 
   /**
-   * Opens the ad link.
+   * Opens the Smartlink for earning points or unlocking features.
+   * This generates maximum CPM for the publisher.
    */
-  triggerDirectLink: () => {
-    window.open(AdService.DIRECT_LINK, '_blank');
+  showSmartlink: () => {
+    try {
+      // We open in a new tab to avoid breaking the user's session
+      window.open(AdService.SMART_LINK, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      console.error("Ad block detected or popup blocked.");
+      // Fallback: simple redirect if popup fails
+      window.location.href = AdService.SMART_LINK;
+    }
   }
 };

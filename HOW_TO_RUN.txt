@@ -1,19 +1,18 @@
+SCHOLAR ASSISTANT - EASY APK GUIDE
 
-SIMPLE STEPS FOR BEGINNER:
+To generate your APK without any manual work:
 
-1. OFFLINE:
-   - Make sure all files (App.tsx, index.html, package.json) are in ONE folder.
-   - Open this folder in VS Code.
+1. Open VS Code Terminal.
+2. Run this command:
+   npm run build-apk
 
-2. GET INTERNET (FOR 10 MINS):
-   - Open VS Code Terminal (Ctrl + `)
-   - Type: npm install
-   - Type: npx cap init
-   - Type: npx cap add android
+3. WHERE IS MY APK?
+   After the command finishes, go to this folder:
+   [YourProject] > android > app > build > outputs > apk > debug > app-debug.apk
 
-3. MOBILE BUILD:
-   - Every time you change your code, type: npx cap sync
-   - Then type: npx cap open android
-   - In Android Studio, click the GREEN PLAY button to install on your phone.
+4. TROUBLESHOOTING:
+   - If you get "gradlew not found": Make sure you have the Android SDK installed on your PC.
+   - If you get "JAVA_HOME not set": You need to install Java (JDK 17 or 21).
+   - If the build is slow: This is normal for the first time as it downloads the Android engine.
 
-NOTE: You must have "Android Studio" installed on your computer for the last step!
+This is the most professional way to get a high-quality app with working Google Ads.

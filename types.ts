@@ -1,5 +1,6 @@
 
 export type Priority = 'Low' | 'Medium' | 'High';
+export type Recurrence = 'None' | 'Daily' | 'Weekly';
 
 export interface UserProfile {
   name: string;
@@ -9,14 +10,29 @@ export interface UserProfile {
   avatar?: string;
 }
 
+export interface Subject {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface SubTask {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+}
+
 export interface TaskItem {
   id: string;
   title: string;
   dueDate: string;
   isCompleted: boolean;
   priority: Priority;
+  subjectId?: string;
   category?: string;
   durationMinutes?: number;
+  recurrence?: Recurrence;
+  subtasks?: SubTask[];
 }
 
 export interface TimetableEntry {

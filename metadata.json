@@ -1,9 +1,9 @@
 {
   "name": "Student Assistant",
-  "description": "A comprehensive student productivity suite featuring task management, weekly timetables, daily routines, and a Gemini-powered AI study coach.",
+  "description": "Comprehensive student productivity suite with task management, timetables, and Gemini-powered AI Guru.",
   "requestFramePermissions": [
-    "microphone",
     "camera",
+    "microphone",
     "geolocation"
   ]
 }

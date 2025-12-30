@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { TaskItem, TimetableEntry } from '../types';
 import { ChevronLeft, ChevronRight, Plus, PartyPopper, Calendar as CalendarIcon, Sparkles } from 'lucide-react';
+import AdsterraAd from './AdsterraAd';
 
 interface CalendarViewProps {
   tasks: TaskItem[];
@@ -28,7 +29,6 @@ const INDIAN_FESTIVALS: Festival[] = [
   { date: '2024-10-12', name: 'Dussehra', type: 'Festival', color: 'orange' },
   { date: '2024-10-31', name: 'Diwali', type: 'Festival', color: 'purple' },
   { date: '2024-12-25', name: 'Christmas', type: 'Festival', color: 'blue' },
-  // 2025 Approximations
   { date: '2025-01-26', name: 'Republic Day', type: 'National', color: 'orange' },
   { date: '2025-03-14', name: 'Holi', type: 'Festival', color: 'purple' },
   { date: '2025-08-15', name: 'Independence Day', type: 'National', color: 'blue' },
@@ -53,7 +53,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, timetable, onAddTask
     const days = [];
 
     for (let i = 0; i < startDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-28 lg:h-36 bg-slate-50/30 rounded-3xl border border-transparent opacity-50"></div>);
+      days.push(<div key={`empty-${i}`} className="h-32 lg:h-44 bg-slate-900/10 rounded-3xl border border-transparent opacity-30"></div>);
     }
 
     for (let d = 1; d <= totalDays; d++) {
@@ -67,48 +67,42 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, timetable, onAddTask
       days.push(
         <div 
           key={d} 
-          className={`h-28 lg:h-36 p-3 lg:p-4 rounded-[2rem] border transition-all hover:shadow-2xl bg-white relative group cursor-pointer overflow-hidden ${
-            isToday ? 'border-brand-purple ring-4 ring-purple-50 shadow-xl' : 'border-slate-100 hover:border-brand-orange/30'
+          className={`h-32 lg:h-44 p-4 rounded-[2rem] border transition-all duration-300 hover:shadow-2xl relative group cursor-pointer overflow-hidden ${
+            isToday ? 'bg-brand-blue/10 border-brand-blue shadow-lg scale-[1.02] z-10' : 'bg-[#0f172a] border-slate-800/50 hover:border-slate-700'
           }`}
         >
           {festival && (
-            <div className={`absolute top-0 right-0 w-12 h-12 flex items-center justify-center opacity-10 -mr-2 -mt-2 rotate-12`}>
-               <PartyPopper size={40} className={`text-brand-${festival.color}`} />
+            <div className={`absolute -top-4 -right-4 w-20 h-20 opacity-10 rotate-12`}>
+               <PartyPopper size={64} className={`text-brand-${festival.color}`} />
             </div>
           )}
 
-          <div className="flex justify-between items-start mb-2 relative z-10">
-            <span className={`text-sm font-black ${isToday ? 'text-brand-purple' : 'text-slate-400'}`}>{d}</span>
+          <div className="flex justify-between items-start mb-3 relative z-10">
+            <span className={`text-lg font-black ${isToday ? 'text-brand-blue drop-shadow-sm' : 'text-slate-500'}`}>{d}</span>
             <button 
               onClick={(e) => {
                 e.stopPropagation();
-                onAddTask({
-                  id: crypto.randomUUID(),
-                  title: 'New Study Task',
-                  dueDate: dateStr,
-                  isCompleted: false,
-                  priority: 'Medium'
-                });
+                onAddTask({ id: crypto.randomUUID(), title: 'Study Task', dueDate: dateStr, isCompleted: false, priority: 'Medium' });
               }}
-              className="opacity-0 group-hover:opacity-100 p-2 bg-brand-orange/10 text-brand-orange rounded-xl transition-all active:scale-90"
+              className="opacity-0 group-hover:opacity-100 p-2 bg-slate-800 text-white rounded-xl transition-all hover:bg-brand-orange shadow-lg"
             >
               <Plus size={16} />
             </button>
           </div>
 
-          <div className="space-y-1 overflow-y-auto no-scrollbar max-h-[70%]">
+          <div className="space-y-1.5 overflow-y-auto no-scrollbar max-h-[60%] relative z-10">
             {festival && (
-              <div className={`text-[9px] font-black p-1.5 rounded-lg flex items-center gap-1 leading-tight mb-1 shadow-sm
-                ${festival.color === 'orange' ? 'bg-orange-100 text-orange-700 border-l-4 border-orange-500' : 
-                  festival.color === 'purple' ? 'bg-purple-100 text-purple-700 border-l-4 border-purple-500' : 
-                  'bg-blue-100 text-blue-700 border-l-4 border-blue-500'}`}
+              <div className={`text-[9px] font-black p-2 rounded-xl flex items-center gap-1 leading-tight shadow-md border-l-4
+                ${festival.color === 'orange' ? 'bg-orange-500/10 text-orange-400 border-orange-500' : 
+                  festival.color === 'purple' ? 'bg-purple-500/10 text-purple-400 border-purple-500' : 
+                  'bg-brand-blue/10 text-brand-blue border-brand-blue'}`}
               >
                 <Sparkles size={10} /> {festival.name}
               </div>
             )}
             
             {dayTasks.map(t => (
-              <div key={t.id} className="text-[9px] font-bold p-1.5 rounded-lg border-l-2 bg-blue-50 border-brand-blue text-brand-blue truncate">
+              <div key={t.id} className={`text-[9px] font-bold p-2 rounded-xl border-l-4 bg-brand-blue/10 border-brand-blue text-slate-200 truncate ${t.isCompleted ? 'opacity-40 line-through' : ''}`}>
                 {t.title}
               </div>
             ))}
@@ -121,38 +115,40 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, timetable, onAddTask
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 pb-10">
-      <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-6 bg-white p-8 rounded-[3rem] shadow-sm border border-slate-50">
-        <div className="text-center md:text-left">
-          <h2 className="text-4xl font-black text-brand-deep tracking-tight">
+    <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
+      <div className="flex flex-col lg:flex-row items-center justify-between mb-12 gap-8 bg-[#0f172a] p-10 rounded-[3rem] border border-slate-800 shadow-2xl">
+        <div className="text-center lg:text-left">
+          <h2 className="text-5xl font-black text-white tracking-tight">
             {monthNames[currentDate.getMonth()]} <span className="text-brand-purple">{currentDate.getFullYear()}</span>
           </h2>
-          <div className="flex items-center gap-4 mt-2 justify-center md:justify-start">
-             <div className="flex items-center gap-1.5 text-[10px] font-black text-brand-orange uppercase tracking-widest bg-orange-50 px-3 py-1 rounded-full">
-                <PartyPopper size={12} /> Festivals
+          <div className="flex items-center gap-6 mt-4 justify-center lg:justify-start">
+             <div className="flex items-center gap-2 text-[10px] font-black text-brand-orange uppercase tracking-widest bg-brand-orange/10 px-4 py-1.5 rounded-full border border-brand-orange/20">
+                <PartyPopper size={14} /> Regional Events
              </div>
-             <div className="flex items-center gap-1.5 text-[10px] font-black text-brand-blue uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">
-                <CalendarIcon size={12} /> Study Blocks
+             <div className="flex items-center gap-2 text-[10px] font-black text-brand-blue uppercase tracking-widest bg-brand-blue/10 px-4 py-1.5 rounded-full border border-brand-blue/20">
+                <CalendarIcon size={14} /> Study Targets
              </div>
           </div>
         </div>
-        <div className="flex bg-slate-50 p-2 rounded-2xl border border-slate-100">
-           <button onClick={prevMonth} className="p-3 text-slate-400 hover:text-brand-purple transition-all hover:bg-white rounded-xl shadow-sm"><ChevronLeft size={28} /></button>
-           <button onClick={nextMonth} className="p-3 text-slate-400 hover:text-brand-purple transition-all hover:bg-white rounded-xl shadow-sm"><ChevronRight size={28} /></button>
+        <div className="flex bg-slate-900/50 p-2 rounded-[1.5rem] border border-slate-800 shadow-inner">
+           <button onClick={prevMonth} className="p-4 text-slate-500 hover:text-white transition-all hover:bg-slate-800 rounded-xl"><ChevronLeft size={32} /></button>
+           <button onClick={nextMonth} className="p-4 text-slate-500 hover:text-white transition-all hover:bg-slate-800 rounded-xl"><ChevronRight size={32} /></button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-3 lg:gap-5 mb-6 px-4">
+      <div className="grid grid-cols-7 gap-4 lg:gap-6 mb-8 px-4">
         {weekDays.map(day => (
-          <div key={day} className="text-center text-[11px] font-black text-slate-300 uppercase tracking-[0.2em]">
+          <div key={day} className="text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-3 lg:gap-5">
+      <div className="grid grid-cols-7 gap-4 lg:gap-6 mb-12">
         {renderDays()}
       </div>
+
+      <AdsterraAd id="55ec911eca20ef6f6a3a27adad217f37" format="banner" />
     </div>
   );
 };

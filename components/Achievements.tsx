@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Achievement } from '../types';
 import { Trophy, Medal, Lock, CheckCircle, Star, Zap, Brain, Plus, X } from 'lucide-react';
+import AdsterraAd from './AdsterraAd';
 
 interface AchievementsProps {
   achievements: Achievement[];
@@ -37,7 +38,7 @@ const Achievements: React.FC<AchievementsProps> = ({ achievements, onAddAchievem
       icon: 'Trophy',
       requirement: 1,
       type: 'custom',
-      isUnlocked: true, // Custom ones are like personal medals
+      isUnlocked: true,
       unlockedAt: new Date().toISOString()
     });
     setIsAdding(false);
@@ -46,9 +47,9 @@ const Achievements: React.FC<AchievementsProps> = ({ achievements, onAddAchievem
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      <div className="bg-academic rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden flex justify-between items-center">
-        <div>
+    <div className="space-y-10 animate-in fade-in duration-700 pb-12">
+      <div className="bg-academic rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden flex justify-between items-center bg-blue-600">
+        <div className="relative z-10">
           <h2 className="text-4xl font-black mb-2">Scholar Hall of Fame</h2>
           <p className="text-blue-100 text-lg font-medium opacity-80">
             {unlockedCount} Badges Unlocked!
@@ -56,7 +57,7 @@ const Achievements: React.FC<AchievementsProps> = ({ achievements, onAddAchievem
         </div>
         <button 
           onClick={() => setIsAdding(true)}
-          className="bg-white text-blue-600 px-6 py-3 rounded-2xl font-black flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
+          className="bg-white text-blue-600 px-6 py-3 rounded-2xl font-black flex items-center gap-2 shadow-lg hover:scale-105 transition-all relative z-10"
         >
           <Plus size={20} /> Add Personal Goal
         </button>
@@ -65,7 +66,7 @@ const Achievements: React.FC<AchievementsProps> = ({ achievements, onAddAchievem
       {isAdding && (
         <div className="bg-white p-8 rounded-[2.5rem] border-2 border-blue-100 shadow-xl animate-in zoom-in-95">
            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black">Add Achievement (Ad Required)</h3>
+              <h3 className="text-xl font-black">Add Achievement (Reward Session)</h3>
               <button onClick={() => setIsAdding(false)}><X /></button>
            </div>
            <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,6 +89,9 @@ const Achievements: React.FC<AchievementsProps> = ({ achievements, onAddAchievem
           </div>
         ))}
       </div>
+
+      {/* Banner Ad Footer */}
+      <AdsterraAd id="55ec911eca20ef6f6a3a27adad217f37" format="banner" />
     </div>
   );
 };
