@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { TimetableEntry, UserProfile, Subject } from '../types';
-import { Plus, Trash2, MapPin, X, Edit3, Grid, List, Clock, Sparkles, Moon, Sun, Wand2, Loader2, BrainCircuit } from 'lucide-react';
+import { Plus, Trash2, MapPin, X, Edit3, Grid, List, Clock, Sparkles, Moon, Sun, Wand2, Loader2, BrainCircuit, CalendarOff } from 'lucide-react';
 import AdsterraAd from './AdsterraAd';
 import { GoogleGenAI, Type } from "@google/genai";
 import { StorageService } from '../services/storage';
@@ -36,7 +36,9 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
     schoolEnd: '14:30',
     coachingStart: '16:00',
     coachingEnd: '18:30',
-    focusSubjects: StorageService.getSubjects().map(s => s.name).join(', ')
+    focusSubjects: StorageService.getSubjects().map(s => s.name).join(', '),
+    schoolHolidays: ['Sunday'] as string[],
+    coachingHolidays: ['Sunday'] as string[]
   });
 
   const calculateDuration = (start: string, end: string) => {
@@ -60,6 +62,17 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
     setIsModalOpen(true);
   };
 
+  const toggleHoliday = (type: 'school' | 'coaching', day: string) => {
+    setAiConstraints(prev => {
+      const key = type === 'school' ? 'schoolHolidays' : 'coachingHolidays';
+      const current = prev[key];
+      const updated = current.includes(day) 
+        ? current.filter(d => d !== day)
+        : [...current, day];
+      return { ...prev, [key]: updated };
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingEntry) {
@@ -74,13 +87,19 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
     setIsGenerating(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Generate a balanced 7-day academic timetable for a student in grade ${profile.grade || '12'}. 
-      Constraints: 
-      - School: ${aiConstraints.schoolStart} to ${aiConstraints.schoolEnd} (Monday to Friday, maybe half day Saturday)
-      - Coaching: ${aiConstraints.coachingStart} to ${aiConstraints.coachingEnd} (Monday to Friday)
-      - Focus on these subjects: ${aiConstraints.focusSubjects}
-      - Include time for self-study, 3 meals, and rest.
-      - Each day should follow a logical sequence.
+      const prompt = `Generate a highly optimized 7-day academic timetable for a student in grade ${profile.grade || '12'}. 
+      
+      CONSTRAINTS: 
+      - School Routine: ${aiConstraints.schoolStart} to ${aiConstraints.schoolEnd}.
+      - School Holidays: ${aiConstraints.schoolHolidays.join(', ') || 'None'}. (On these days, NO school slots)
+      - Coaching Routine: ${aiConstraints.coachingStart} to ${aiConstraints.coachingEnd}.
+      - Coaching Holidays: ${aiConstraints.coachingHolidays.join(', ') || 'None'}. (On these days, NO coaching slots)
+      - Subjects to focus: ${aiConstraints.focusSubjects}.
+      
+      LOGIC:
+      - For SCHOOL/COACHING HOLIDAYS: Distribute the extra free time between Deep Self-Study, Revision, and Hobby/Rest.
+      - Ensure 3 meals (Breakfast, Lunch, Dinner).
+      - Maintain consistent sleep cycle (approx 10:30 PM to 6:00 AM).
       - Return an array of objects matching the specified schema.`;
 
       const response = await ai.models.generateContent({
@@ -94,10 +113,10 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
               type: Type.OBJECT,
               properties: {
                 day: { type: Type.STRING, description: "Monday through Sunday" },
-                subject: { type: Type.STRING, description: "e.g., Mathematics, School, Lunch" },
-                startTime: { type: Type.STRING, description: "HH:mm format" },
-                endTime: { type: Type.STRING, description: "HH:mm format" },
-                location: { type: Type.STRING, description: "e.g., School, Home, Coaching" }
+                subject: { type: Type.STRING, description: "The activity name" },
+                startTime: { type: Type.STRING, description: "HH:mm" },
+                endTime: { type: Type.STRING, description: "HH:mm" },
+                location: { type: Type.STRING, description: "School, Home, Coaching, etc." }
               },
               required: ["day", "subject", "startTime", "endTime", "location"]
             }
@@ -130,43 +149,43 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
   const dayEntries = useMemo(() => entries.filter(e => e.day === activeDay).sort((a, b) => a.startTime.localeCompare(b.startTime)), [entries, activeDay]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-[#0f172a] p-6 rounded-[2rem] border border-slate-800 shadow-xl">
-        <div className="flex bg-slate-900/50 border border-slate-800 p-1.5 rounded-2xl shadow-inner w-full md:w-auto overflow-x-auto no-scrollbar">
-           <button onClick={() => setViewMode('daily')} className={`px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shrink-0 ${viewMode === 'daily' ? 'bg-brand-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><List size={16} /> Day Grid</button>
-           <button onClick={() => setViewMode('weekly')} className={`px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shrink-0 ${viewMode === 'weekly' ? 'bg-brand-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><Grid size={16} /> Week View</button>
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20 px-0">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-[#0f172a] p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-slate-800 shadow-xl mx-2">
+        <div className="flex bg-slate-900/50 border border-slate-800 p-1 rounded-xl shadow-inner w-full md:w-auto overflow-x-auto no-scrollbar">
+           <button onClick={() => setViewMode('daily')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black flex items-center gap-2 transition-all shrink-0 ${viewMode === 'daily' ? 'bg-brand-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><List size={14} /> Day Grid</button>
+           <button onClick={() => setViewMode('weekly')} className={`px-4 py-2 rounded-lg text-[10px] md:text-xs font-black flex items-center gap-2 transition-all shrink-0 ${viewMode === 'weekly' ? 'bg-brand-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><Grid size={14} /> Week View</button>
         </div>
-        <div className="flex gap-4 w-full md:w-auto">
+        <div className="flex gap-2 w-full md:w-auto">
           <button 
             onClick={() => setIsAiModalOpen(true)}
-            className="flex-1 md:flex-none bg-festive-gradient text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all shadow-xl font-black text-sm"
+            className="flex-1 md:flex-none bg-festive-gradient text-white px-4 py-3 md:px-8 md:py-4 rounded-xl md:rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-xl font-black text-[10px] md:text-sm"
           >
-            <Wand2 size={20} /> AI Magic
+            <Wand2 size={16} /> AI Magic
           </button>
-          <button onClick={() => handleOpenAdd()} className="flex-1 md:flex-none bg-brand-blue text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-xl font-black text-sm">
-            <Plus size={20} /> New Slot
+          <button onClick={() => handleOpenAdd()} className="flex-1 md:flex-none bg-brand-blue text-white px-4 py-3 md:px-8 md:py-4 rounded-xl md:rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-xl font-black text-[10px] md:text-sm">
+            <Plus size={16} /> New Slot
           </button>
         </div>
       </div>
 
-      <div className="bg-brand-blue/10 border border-brand-blue/20 p-5 rounded-[2rem] flex items-center gap-4 text-brand-blue font-bold text-sm">
-        <Moon size={20} className="shrink-0" />
+      <div className="mx-2 bg-brand-blue/10 border border-brand-blue/20 p-4 rounded-[1.5rem] flex items-center gap-3 text-brand-blue font-bold text-[10px] md:text-sm">
+        <Moon size={16} className="shrink-0" />
         <span>Optimized Study Window: 06:00 AM - 10:00 PM. High productivity mode active.</span>
       </div>
 
-      <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar px-2">
         {DAYS.map(day => (
-          <button key={day} onClick={() => setActiveDay(day)} className={`px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border shrink-0 ${activeDay === day ? 'bg-white text-brand-deep border-white shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-105' : 'bg-slate-900/50 text-slate-500 border-slate-800 hover:bg-slate-800'}`}>{day}</button>
+          <button key={day} onClick={() => setActiveDay(day)} className={`px-5 py-2.5 rounded-xl font-black text-[9px] md:text-[11px] uppercase tracking-widest transition-all border shrink-0 ${activeDay === day ? 'bg-white text-brand-deep border-white shadow-lg scale-105' : 'bg-slate-900/50 text-slate-500 border-slate-800 hover:bg-slate-800'}`}>{day}</button>
         ))}
       </div>
 
-      <div className="bg-[#0f172a] rounded-[3rem] border border-slate-800 shadow-2xl p-6 lg:p-12">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-12 gap-6 px-4">
-          <h2 className="text-3xl font-black text-white">{activeDay} <span className="text-brand-blue">Mission Control</span></h2>
-          <div className="flex items-center gap-3 text-[10px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20"><Sun size={14} /> Energy Peaks</div>
+      <div className="bg-[#0f172a] rounded-[2rem] md:rounded-[3rem] border border-slate-800 shadow-2xl p-4 md:p-8 lg:p-12 mx-1">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 md:mb-12 gap-4 px-2">
+          <h2 className="text-xl md:text-3xl font-black text-white">{activeDay} <span className="text-brand-blue">Mission Control</span></h2>
+          <div className="flex items-center gap-2 text-[8px] md:text-[10px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20"><Sun size={12} /> Energy Peaks</div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {ACTIVE_HOURS.map(slot => {
             const entry = dayEntries.find(e => {
               const hStart = parseInt(e.startTime.split(':')[0]);
@@ -176,37 +195,37 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
             });
 
             return (
-              <div key={slot} className="group relative flex items-start gap-6 lg:gap-12 min-h-[100px]">
-                <div className="w-16 lg:w-20 pt-2 text-right">
-                  <span className={`text-sm font-black transition-colors ${entry ? 'text-brand-blue' : 'text-slate-700'}`}>{slot}</span>
+              <div key={slot} className="group relative flex items-start gap-4 md:gap-8 lg:gap-12 min-h-[80px]">
+                <div className="w-12 md:w-20 pt-1 text-right">
+                  <span className={`text-[10px] md:text-sm font-black transition-colors ${entry ? 'text-brand-blue' : 'text-slate-700'}`}>{slot}</span>
                 </div>
-                <div className="flex-1 pb-6 relative">
-                  <div className="absolute top-4 left-0 right-0 h-px bg-slate-800/50 -z-10"></div>
+                <div className="flex-1 pb-4 relative">
+                  <div className="absolute top-3 left-0 right-0 h-px bg-slate-800/50 -z-10"></div>
                   {entry ? (
                     entry.startTime.startsWith(slot.split(':')[0]) && (
                       <div 
                         onClick={() => handleEdit(entry)}
-                        className="bg-slate-900 border border-slate-700/50 p-6 rounded-[2rem] shadow-xl transition-all hover:border-brand-blue hover:translate-x-1 cursor-pointer group/card relative overflow-hidden"
-                        style={{ minHeight: `${Math.max(100, (calculateDuration(entry.startTime, entry.endTime) / 60) * 100)}px` }}
+                        className="bg-slate-900 border border-slate-700/50 p-4 md:p-6 rounded-2xl md:rounded-[2rem] shadow-xl transition-all hover:border-brand-blue hover:translate-x-1 cursor-pointer group/card relative overflow-hidden"
+                        style={{ minHeight: `${Math.max(80, (calculateDuration(entry.startTime, entry.endTime) / 60) * 80)}px` }}
                       >
-                        <div className="absolute top-0 left-0 w-2 h-full bg-brand-blue"></div>
+                        <div className="absolute top-0 left-0 w-1 md:w-2 h-full bg-brand-blue"></div>
                         <div className="flex justify-between items-start">
                           <div>
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="text-[10px] font-black bg-brand-blue/20 text-brand-blue px-3 py-1 rounded-lg uppercase tracking-wider">{calculateDuration(entry.startTime, entry.endTime) / 60}h Session</span>
-                              {entry.location && <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1"><MapPin size={10} className="text-brand-orange" /> {entry.location}</span>}
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-[8px] md:text-[10px] font-black bg-brand-blue/20 text-brand-blue px-2 py-0.5 rounded-md uppercase tracking-wider">{calculateDuration(entry.startTime, entry.endTime) / 60}h Session</span>
+                              {entry.location && <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1"><MapPin size={8} className="text-brand-orange" /> {entry.location}</span>}
                             </div>
-                            <h4 className="font-black text-2xl text-white mb-2 tracking-tight">{entry.subject}</h4>
-                            <p className="text-xs font-bold text-slate-400 flex items-center gap-1"><Clock size={12} className="text-brand-blue" /> {entry.startTime} — {entry.endTime}</p>
+                            <h4 className="font-black text-sm md:text-2xl text-white mb-1 tracking-tight">{entry.subject}</h4>
+                            <p className="text-[9px] md:text-xs font-bold text-slate-400 flex items-center gap-1"><Clock size={10} className="text-brand-blue" /> {entry.startTime} — {entry.endTime}</p>
                           </div>
-                          <button onClick={(e) => { e.stopPropagation(); deleteEntry(entry.id); }} className="p-3 text-slate-700 hover:text-red-500 transition-all active:scale-90"><Trash2 size={22} /></button>
+                          <button onClick={(e) => { e.stopPropagation(); deleteEntry(entry.id); }} className="p-2 text-slate-700 hover:text-red-500 transition-all active:scale-90"><Trash2 size={18} /></button>
                         </div>
                       </div>
                     )
                   ) : (
-                    <button onClick={() => handleOpenAdd(activeDay, slot)} className="w-full text-left py-6 px-8 rounded-[2rem] border-2 border-dashed border-slate-800 hover:border-brand-blue/30 hover:bg-slate-900/30 transition-all flex items-center justify-between group/btn">
-                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-700 group-hover/btn:text-slate-500">Available Study Window</span>
-                      <Plus size={20} className="text-slate-800 group-hover/btn:text-brand-blue transition-colors" />
+                    <button onClick={() => handleOpenAdd(activeDay, slot)} className="w-full text-left py-4 px-6 rounded-xl md:rounded-[2rem] border-2 border-dashed border-slate-800 hover:border-brand-blue/30 hover:bg-slate-900/30 transition-all flex items-center justify-between group/btn">
+                      <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-slate-700 group-hover/btn:text-slate-500">Available Window</span>
+                      <Plus size={16} className="text-slate-800 group-hover/btn:text-brand-blue transition-colors" />
                     </button>
                   )}
                 </div>
@@ -218,66 +237,110 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
 
       {/* AI Generator Modal */}
       {isAiModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in">
-          <div className="bg-[#0f172a] w-full max-w-2xl rounded-[3rem] border border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-             <div className="px-10 py-8 border-b border-slate-800 flex items-center justify-between bg-festive-gradient">
-                <div className="flex items-center gap-4 text-white">
-                  <BrainCircuit size={32} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 md:p-4 bg-black/90 backdrop-blur-xl animate-in fade-in">
+          <div className="bg-[#0f172a] w-full max-w-2xl rounded-[2rem] md:rounded-[3rem] border border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+             <div className="px-6 py-4 md:px-10 md:py-8 border-b border-slate-800 flex items-center justify-between bg-festive-gradient">
+                <div className="flex items-center gap-3 md:gap-4 text-white">
+                  <BrainCircuit size={24} className="md:w-8 md:h-8" />
                   <div>
-                    <h3 className="text-2xl font-black">AI Timetable Magic</h3>
-                    <p className="text-[10px] font-bold uppercase opacity-80 tracking-widest">Optimized for {profile.name || 'Scholar'}</p>
+                    <h3 className="text-lg md:text-2xl font-black">AI Timetable Magic</h3>
+                    <p className="text-[8px] md:text-[10px] font-bold uppercase opacity-80 tracking-widest">For {profile.name || 'Scholar'}</p>
                   </div>
                 </div>
-                <button onClick={() => setIsAiModalOpen(false)} className="text-white hover:scale-110 transition-transform"><X size={28} /></button>
+                <button onClick={() => setIsAiModalOpen(false)} className="text-white hover:scale-110 transition-transform"><X size={24} /></button>
              </div>
 
-             <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto no-scrollbar">
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">School Start</label>
-                    <input type="time" value={aiConstraints.schoolStart} onChange={e => setAiConstraints({...aiConstraints, schoolStart: e.target.value})} className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-white outline-none focus:border-brand-blue" />
+             <div className="p-6 md:p-10 space-y-6 md:space-y-8 max-h-[80vh] overflow-y-auto no-scrollbar">
+                <div className="grid grid-cols-2 gap-4 md:gap-8">
+                  <div className="space-y-3">
+                    <label className="block text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">School Start</label>
+                    <input type="time" value={aiConstraints.schoolStart} onChange={e => setAiConstraints({...aiConstraints, schoolStart: e.target.value})} className="w-full px-4 py-3 md:px-6 md:py-4 bg-slate-900 border border-slate-800 rounded-xl font-bold text-white outline-none focus:border-brand-blue text-xs md:text-sm" />
                   </div>
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">School End</label>
-                    <input type="time" value={aiConstraints.schoolEnd} onChange={e => setAiConstraints({...aiConstraints, schoolEnd: e.target.value})} className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-white outline-none focus:border-brand-blue" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Coaching Start</label>
-                    <input type="time" value={aiConstraints.coachingStart} onChange={e => setAiConstraints({...aiConstraints, coachingStart: e.target.value})} className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-white outline-none focus:border-brand-blue" />
-                  </div>
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Coaching End</label>
-                    <input type="time" value={aiConstraints.coachingEnd} onChange={e => setAiConstraints({...aiConstraints, coachingEnd: e.target.value})} className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-white outline-none focus:border-brand-blue" />
+                  <div className="space-y-3">
+                    <label className="block text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">School End</label>
+                    <input type="time" value={aiConstraints.schoolEnd} onChange={e => setAiConstraints({...aiConstraints, schoolEnd: e.target.value})} className="w-full px-4 py-3 md:px-6 md:py-4 bg-slate-900 border border-slate-800 rounded-xl font-bold text-white outline-none focus:border-brand-blue text-xs md:text-sm" />
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Target Subjects</label>
-                  <input type="text" value={aiConstraints.focusSubjects} onChange={e => setAiConstraints({...aiConstraints, focusSubjects: e.target.value})} placeholder="e.g., Maths, Physics, Chemistry" className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-white outline-none focus:border-brand-blue" />
+                  <label className="block text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <CalendarOff size={14} className="text-brand-orange" /> School Holidays (Extra Study Days)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {DAYS.map(day => (
+                      <button 
+                        key={day} 
+                        type="button" 
+                        onClick={() => toggleHoliday('school', day)}
+                        className={`px-3 py-1.5 rounded-lg text-[8px] md:text-[10px] font-black uppercase tracking-tighter transition-all border ${
+                          aiConstraints.schoolHolidays.includes(day) 
+                            ? 'bg-brand-orange border-brand-orange text-white' 
+                            : 'bg-slate-900 border-slate-800 text-slate-500'
+                        }`}
+                      >
+                        {day.slice(0, 3)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="p-6 bg-brand-blue/5 border border-brand-blue/20 rounded-2xl text-brand-blue/80 text-xs font-medium leading-relaxed">
-                  <Sparkles size={16} className="inline mr-2" />
-                  AI will generate a 7-day plan, placing school and coaching as fixed blocks and distributing study time for your subjects. This will overwrite your current timetable.
+                <div className="grid grid-cols-2 gap-4 md:gap-8 border-t border-slate-800 pt-6">
+                  <div className="space-y-3">
+                    <label className="block text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Coaching Start</label>
+                    <input type="time" value={aiConstraints.coachingStart} onChange={e => setAiConstraints({...aiConstraints, coachingStart: e.target.value})} className="w-full px-4 py-3 md:px-6 md:py-4 bg-slate-900 border border-slate-800 rounded-xl font-bold text-white outline-none focus:border-brand-blue text-xs md:text-sm" />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="block text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Coaching End</label>
+                    <input type="time" value={aiConstraints.coachingEnd} onChange={e => setAiConstraints({...aiConstraints, coachingEnd: e.target.value})} className="w-full px-4 py-3 md:px-6 md:py-4 bg-slate-900 border border-slate-800 rounded-xl font-bold text-white outline-none focus:border-brand-blue text-xs md:text-sm" />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="block text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <CalendarOff size={14} className="text-brand-blue" /> Coaching Holidays
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {DAYS.map(day => (
+                      <button 
+                        key={day} 
+                        type="button" 
+                        onClick={() => toggleHoliday('coaching', day)}
+                        className={`px-3 py-1.5 rounded-lg text-[8px] md:text-[10px] font-black uppercase tracking-tighter transition-all border ${
+                          aiConstraints.coachingHolidays.includes(day) 
+                            ? 'bg-brand-blue border-brand-blue text-white' 
+                            : 'bg-slate-900 border-slate-800 text-slate-500'
+                        }`}
+                      >
+                        {day.slice(0, 3)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3 border-t border-slate-800 pt-6">
+                  <label className="block text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Focus Disciplines</label>
+                  <input type="text" value={aiConstraints.focusSubjects} onChange={e => setAiConstraints({...aiConstraints, focusSubjects: e.target.value})} placeholder="e.g., Physics, Organic Chemistry" className="w-full px-4 py-3 md:px-6 md:py-4 bg-slate-900 border border-slate-800 rounded-xl font-bold text-white outline-none focus:border-brand-blue text-xs md:text-sm" />
+                </div>
+
+                <div className="p-4 bg-brand-blue/5 border border-brand-blue/20 rounded-xl text-brand-blue/80 text-[10px] font-medium leading-relaxed">
+                  <Sparkles size={12} className="inline mr-2" />
+                  On Holidays, the AI will prioritize deep-focus sessions and structured revision to maximize your productivity while keeping you fresh.
                 </div>
 
                 <button 
                   onClick={handleGenerateAiTimetable}
                   disabled={isGenerating}
-                  className="w-full py-6 bg-festive-gradient text-white font-black rounded-2xl shadow-xl flex items-center justify-center gap-4 active:scale-95 transition-all uppercase tracking-widest text-sm"
+                  className="w-full py-5 bg-festive-gradient text-white font-black rounded-xl md:rounded-2xl shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all uppercase tracking-widest text-[10px] md:text-xs"
                 >
                   {isGenerating ? (
                     <>
-                      <Loader2 size={24} className="animate-spin" />
-                      Guru is Calculating...
+                      <Loader2 size={20} className="animate-spin" />
+                      Guru is Thinking...
                     </>
                   ) : (
                     <>
-                      <Wand2 size={24} />
-                      Generate Optimized Routine
+                      <Wand2 size={20} />
+                      Lock in New Routine
                     </>
                   )}
                 </button>
@@ -288,39 +351,39 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
 
       {/* Manual Entry Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="bg-[#0f172a] w-full max-w-lg rounded-[3rem] border border-slate-800 shadow-2xl overflow-hidden">
-            <div className="px-10 py-8 border-b border-slate-800 flex items-center justify-between bg-brand-blue/10">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="bg-[#0f172a] w-full max-w-lg rounded-[2rem] md:rounded-[3rem] border border-slate-800 shadow-2xl overflow-hidden">
+            <div className="px-8 py-6 border-b border-slate-800 flex items-center justify-between bg-brand-blue/10">
                <div>
-                  <h3 className="text-2xl font-black text-white">{editingEntry ? 'Refine Session' : 'Plan Deep Study'}</h3>
-                  <p className="text-[10px] font-black text-brand-blue uppercase tracking-widest mt-1">Focusing for: {activeDay}</p>
+                  <h3 className="text-xl font-black text-white">{editingEntry ? 'Refine Session' : 'Plan Deep Study'}</h3>
+                  <p className="text-[8px] font-black text-brand-blue uppercase tracking-widest mt-0.5">{activeDay} Selection</p>
                </div>
-               <button onClick={() => setIsModalOpen(false)}><X size={28} /></button>
+               <button onClick={() => setIsModalOpen(false)}><X size={24} /></button>
             </div>
-            <form onSubmit={handleSubmit} className="p-10 space-y-8">
-              <div className="space-y-4">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Study Content</label>
-                <input required type="text" value={formData.subject} onChange={e => setFormData({...formData, subject: e.target.value})} placeholder="e.g., Quantum Physics Review" className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl focus:border-brand-blue font-bold text-white outline-none" />
+            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+              <div className="space-y-3">
+                <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Session Title</label>
+                <input required type="text" value={formData.subject} onChange={e => setFormData({...formData, subject: e.target.value})} placeholder="e.g., Matrix Calculus Review" className="w-full px-5 py-3 bg-slate-900 border border-slate-800 rounded-xl focus:border-brand-blue font-bold text-white outline-none text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-6">
-                 <div className="space-y-4">
-                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Commence</label>
-                   <input required type="time" value={formData.startTime} onChange={e => setFormData({...formData, startTime: e.target.value})} className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-white" />
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-3">
+                   <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Start</label>
+                   <input required type="time" value={formData.startTime} onChange={e => setFormData({...formData, startTime: e.target.value})} className="w-full px-5 py-3 bg-slate-900 border border-slate-800 rounded-xl font-bold text-white text-sm" />
                  </div>
-                 <div className="space-y-4">
-                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Conclude</label>
-                   <input required type="time" value={formData.endTime} onChange={e => setFormData({...formData, endTime: e.target.value})} className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-white" />
+                 <div className="space-y-3">
+                   <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">End</label>
+                   <input required type="time" value={formData.endTime} onChange={e => setFormData({...formData, endTime: e.target.value})} className="w-full px-5 py-3 bg-slate-900 border border-slate-800 rounded-xl font-bold text-white text-sm" />
                  </div>
               </div>
-              <button type="submit" className="w-full py-6 bg-brand-blue text-white font-black rounded-2xl shadow-xl shadow-brand-blue/20 active:scale-95 transition-all uppercase tracking-widest text-xs">
-                {editingEntry ? 'Update Strategy' : 'Lock in Slot'}
+              <button type="submit" className="w-full py-4 bg-brand-blue text-white font-black rounded-xl shadow-lg active:scale-95 transition-all uppercase tracking-widest text-[10px]">
+                {editingEntry ? 'Save Changes' : 'Confirm Slot'}
               </button>
             </form>
           </div>
         </div>
       )}
       
-      <div className="pt-4">
+      <div className="pt-2 px-2 flex justify-center">
         <AdsterraAd id="55ec911eca20ef6f6a3a27adad217f37" format="banner" />
       </div>
     </div>
