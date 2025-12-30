@@ -49,10 +49,7 @@ const App: React.FC = () => {
   };
 
   const handleWatchAd = () => {
-    // Adsterra Smartlink Trigger
     AdService.showSmartlink();
-    
-    // Grant points immediately as we can't track completion 100% on direct links
     const newPoints = points + 10;
     setPoints(newPoints);
     StorageService.savePoints(newPoints);
@@ -113,7 +110,7 @@ const App: React.FC = () => {
            {currentView === 'dashboard' && <Dashboard tasks={tasks} timetable={timetable} routines={routines} profile={profile} points={points} onNavigate={setCurrentView} onWatchAd={handleWatchAd} />}
            {currentView === 'tasks' && <Tasks tasks={tasks} onUpdateTasks={handleUpdateTasks} onAddTask={handleAddTask} />}
            {currentView === 'calendar' && <CalendarView tasks={tasks} timetable={timetable} onAddTask={handleAddTask} />}
-           {currentView === 'timetable' && <Timetable entries={timetable} onUpdateEntries={(e) => { setTimetable(e); StorageService.saveTimetable(e); }} onAddEntry={(e) => { const n = [...timetable, e]; setTimetable(n); StorageService.saveTimetable(n); }} />}
+           {currentView === 'timetable' && <Timetable entries={timetable} profile={profile} onUpdateEntries={(e) => { setTimetable(e); StorageService.saveTimetable(e); }} onAddEntry={(e) => { const n = [...timetable, e]; setTimetable(n); StorageService.saveTimetable(n); }} />}
            {currentView === 'routine' && <RoutineTracker routines={routines} onUpdateRoutines={(r) => { setRoutines(r); StorageService.saveRoutines(r); }} onAddRoutine={(r) => { const n = [...routines, r]; setRoutines(n); StorageService.saveRoutines(n); }} />}
            {currentView === 'ai-coach' && <AICoach tasks={tasks} userPoints={points} onDeductPoints={() => handleDeductPoints(10)} onWatchAd={handleWatchAd} />}
            {currentView === 'focus-timer' && <FocusTimer tasks={tasks} onUpdateTasks={handleUpdateTasks} />}
