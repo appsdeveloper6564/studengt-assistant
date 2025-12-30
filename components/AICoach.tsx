@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Send, User, Loader2, GraduationCap, Coins, AlertCircle, Camera, X, Calculator, Code, BrainCircuit, Sparkles } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
@@ -64,14 +65,21 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
         model: 'gemini-3-pro-preview',
         contents: { parts },
         config: { 
-          systemInstruction: `You are Scholar Hub's "AI Guru". Provide EXTREMELY detailed, high-quality academic help. Use bold headings. Keep font size readable but professional.`,
+          thinkingConfig: { thinkingBudget: 4000 },
+          systemInstruction: `You are Scholar Hub's "AI Guru", an elite academic mentor. 
+          Provide EXTREMELY detailed, high-quality help. 
+          For MATH: Show all derivations. 
+          For ESSAYS: Use professional structure. 
+          Use bold headings and clear formatting.`,
           temperature: 0.3 
         }
       });
 
-      setMessages(prev => [...prev, { role: 'ai', content: response.text || "I'm sorry, I couldn't process that. Try rephrasing." }]);
+      const aiText = response.text;
+      setMessages(prev => [...prev, { role: 'ai', content: aiText || "I'm sorry, I couldn't process that. Try rephrasing." }]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'ai', content: "Server busy. Please try again." }]);
+      console.error("AI Coach Error:", err);
+      setMessages(prev => [...prev, { role: 'ai', content: "Guru is currently offline or busy. Please try again in a moment." }]);
     } finally {
       setIsLoading(false);
     }

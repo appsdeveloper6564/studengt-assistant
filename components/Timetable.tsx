@@ -35,7 +35,7 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
     schoolStart: '08:00',
     schoolEnd: '14:30',
     coachingStart: '16:00',
-    coachingEnd: '18:30',
+    coachingEnd: '20:30',
     focusSubjects: StorageService.getSubjects().map(s => s.name).join(', '),
     schoolHolidays: ['Sunday'] as string[],
     coachingHolidays: ['Sunday'] as string[]
@@ -84,39 +84,43 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
   };
 
   const handleGenerateAiTimetable = async () => {
+    if (isGenerating) return;
     setIsGenerating(true);
+    
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Generate a highly optimized 7-day academic timetable for a student in grade ${profile.grade || '12'}. 
+      const prompt = `You are an expert academic strategist. Generate a high-performance 7-day timetable for a student in grade ${profile.grade || '12'}.
       
-      CONSTRAINTS: 
-      - School Routine: ${aiConstraints.schoolStart} to ${aiConstraints.schoolEnd}.
-      - School Holidays: ${aiConstraints.schoolHolidays.join(', ') || 'None'}. (On these days, NO school slots)
-      - Coaching Routine: ${aiConstraints.coachingStart} to ${aiConstraints.coachingEnd}.
-      - Coaching Holidays: ${aiConstraints.coachingHolidays.join(', ') || 'None'}. (On these days, NO coaching slots)
-      - Subjects to focus: ${aiConstraints.focusSubjects}.
+      CONSTRAINTS (Fixed Blocks):
+      - School Time: ${aiConstraints.schoolStart} to ${aiConstraints.schoolEnd}
+      - School Holidays (No school on these days): ${aiConstraints.schoolHolidays.join(', ') || 'None'}
+      - Coaching Time: ${aiConstraints.coachingStart} to ${aiConstraints.coachingEnd}
+      - Coaching Holidays (No coaching on these days): ${aiConstraints.coachingHolidays.join(', ') || 'None'}
+      - Target Subjects: ${aiConstraints.focusSubjects}
       
-      LOGIC:
-      - For SCHOOL/COACHING HOLIDAYS: Distribute the extra free time between Deep Self-Study, Revision, and Hobby/Rest.
-      - Ensure 3 meals (Breakfast, Lunch, Dinner).
-      - Maintain consistent sleep cycle (approx 10:30 PM to 6:00 AM).
-      - Return an array of objects matching the specified schema.`;
+      LOGIC RULES:
+      1. On days with school/coaching holidays, replace those blocks with 90-minute "Deep Self-Study" or "Revision" sessions for the target subjects.
+      2. Include 3 meal breaks (Breakfast ~8am, Lunch ~1:30pm, Dinner ~8:30pm).
+      3. No study after 11 PM or before 6 AM.
+      4. Ensure a 15-minute break between long study sessions.
+      5. Strictly provide only the JSON array requested.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt,
         config: {
+          thinkingConfig: { thinkingBudget: 2000 },
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.ARRAY,
             items: {
               type: Type.OBJECT,
               properties: {
-                day: { type: Type.STRING, description: "Monday through Sunday" },
-                subject: { type: Type.STRING, description: "The activity name" },
-                startTime: { type: Type.STRING, description: "HH:mm" },
-                endTime: { type: Type.STRING, description: "HH:mm" },
-                location: { type: Type.STRING, description: "School, Home, Coaching, etc." }
+                day: { type: Type.STRING },
+                subject: { type: Type.STRING },
+                startTime: { type: Type.STRING },
+                endTime: { type: Type.STRING },
+                location: { type: Type.STRING }
               },
               required: ["day", "subject", "startTime", "endTime", "location"]
             }
@@ -124,7 +128,16 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
         }
       });
 
-      const generatedData = JSON.parse(response.text || '[]');
+      let responseText = response.text || '[]';
+      // Strip any accidental markdown formatting if it exists
+      responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      
+      const generatedData = JSON.parse(responseText);
+      
+      if (!Array.isArray(generatedData)) {
+         throw new Error("AI returned invalid format");
+      }
+
       const formattedEntries: TimetableEntry[] = generatedData.map((item: any) => ({
         ...item,
         id: crypto.randomUUID()
@@ -133,10 +146,12 @@ const Timetable: React.FC<TimetableProps> = ({ entries, profile, onUpdateEntries
       if (formattedEntries.length > 0) {
         onUpdateEntries(formattedEntries);
         setIsAiModalOpen(false);
+      } else {
+        throw new Error("No entries generated");
       }
     } catch (err) {
-      console.error("AI Gen Error:", err);
-      alert("AI was unable to generate the schedule. Please check your parameters and try again.");
+      console.error("Critical AI Timetable Error:", err);
+      alert("AI was unable to process the schedule. This usually happens due to complex constraints. Try shortening your coaching hours or target subjects and try again.");
     } finally {
       setIsGenerating(false);
     }
