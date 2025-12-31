@@ -1,0 +1,265 @@
+
+// Fixed missing methods in AIService to resolve component errors and integrated Gemini API correctly following @google/genai guidelines.
+import { GoogleGenAI, Type } from "@google/genai";
+import { ForumPost, UserProfile, TimetableEntry, TaskItem, Routine, Quiz } from "../types";
+
+export const AIService = {
+  getAi: () => new GoogleGenAI({ apiKey: process.env.API_KEY }),
+
+  /**
+   * Complex Academic Q&A (Guru Pro)
+   */
+  askGuru: async (prompt: string, grade: string, language: string, base64Image?: string) => {
+    const ai = AIService.getAi();
+    const parts: any[] = [{ text: prompt }];
+    if (base64Image) {
+      parts.unshift({ 
+        inlineData: { mimeType: 'image/jpeg', data: base64Image.split(',')[1] } 
+      });
+    }
+
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: { parts },
+        config: {
+          systemInstruction: `You are the Scholar Hub AI Guru, a world-class academic mentor. 
+          The user is in grade: ${grade}. 
+          Answer in: ${language}.
+          Always provide step-by-step logic for math. Use analogies for science. 
+          Be encouraging and concise unless deep explanation is needed.`,
+          thinkingConfig: { thinkingBudget: 8000 },
+          temperature: 0.5
+        }
+      });
+      return response.text;
+    } catch (error) {
+      console.error("Gemini API Error:", error);
+      return "Guru is currently studying new material. Please try again in a moment!";
+    }
+  },
+
+  /**
+   * AI Generated Mock Test
+   */
+  generateCustomQuiz: async (topic: string, grade: string): Promise<Quiz | null> => {
+    const ai = AIService.getAi();
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Generate a 5-question academic mock test about "${topic}" for a student in ${grade}.`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              questions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    question: { type: Type.STRING },
+                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    correctAnswer: { type: Type.INTEGER },
+                    explanation: { type: Type.STRING }
+                  },
+                  required: ["question", "options", "correctAnswer"]
+                }
+              }
+            }
+          }
+        }
+      });
+      const data = JSON.parse(response.text || "{}");
+      return {
+        id: crypto.randomUUID(),
+        title: data.title || `AI Quiz: ${topic}`,
+        subjectId: 'ai_generated',
+        questions: data.questions
+      };
+    } catch (e) {
+      console.error("Quiz generation failed:", e);
+      return null;
+    }
+  },
+
+  /**
+   * Alias for generateCustomQuiz used in LearningHub
+   */
+  generateQuiz: async (summary: string): Promise<Quiz | null> => {
+    return AIService.generateCustomQuiz(`Quiz based on this content: ${summary.substring(0, 500)}`, "appropriate level");
+  },
+
+  /**
+   * Suggest task priority based on importance and proximity
+   */
+  suggestPriority: async (tasks: TaskItem[]) => {
+    const ai = AIService.getAi();
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Given these study tasks, suggest which ones should be prioritized and why: ${JSON.stringify(tasks.map(t => ({ title: t.title, dueDate: t.dueDate, priority: t.priority })))}`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                taskTitle: { type: Type.STRING },
+                reason: { type: Type.STRING }
+              },
+              required: ["taskTitle", "reason"]
+            }
+          }
+        }
+      });
+      return JSON.parse(response.text || "[]");
+    } catch (e) {
+      console.error("Priority suggestion failed:", e);
+      return [];
+    }
+  },
+
+  /**
+   * Break down a complex task into subtasks
+   */
+  breakdownTask: async (title: string) => {
+    const ai = AIService.getAi();
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Break down this study task into 3-5 small, actionable sub-tasks: "${title}"`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
+          }
+        }
+      });
+      return JSON.parse(response.text || "[]");
+    } catch (e) {
+      console.error("Task breakdown failed:", e);
+      return [];
+    }
+  },
+
+  /**
+   * Detect burnout risks in schedule
+   */
+  detectBurnout: async (entries: TimetableEntry[]) => {
+    const ai = AIService.getAi();
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Analyze this study schedule for potential burnout risks (too many hours, lack of breaks, etc.): ${JSON.stringify(entries)}`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
+          }
+        }
+      });
+      return JSON.parse(response.text || "[]");
+    } catch (e) {
+      console.error("Burnout detection failed:", e);
+      return [];
+    }
+  },
+
+  /**
+   * Suggest daily rituals/habits
+   */
+  suggestHabits: async (grade: string, language: string): Promise<Routine[]> => {
+    const ai = AIService.getAi();
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Suggest 3-5 daily study habits/rituals for a student in grade ${grade}. Answer in ${language}.`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                time: { type: Type.STRING },
+                durationMinutes: { type: Type.INTEGER }
+              },
+              required: ["title", "time"]
+            }
+          }
+        }
+      });
+      const data = JSON.parse(response.text || "[]");
+      return data.map((r: any) => ({
+        id: crypto.randomUUID(),
+        title: r.title,
+        time: r.time,
+        isCompleted: false,
+        durationMinutes: r.durationMinutes || 30
+      }));
+    } catch (e) {
+      console.error("Habit suggestion failed:", e);
+      return [];
+    }
+  },
+
+  /**
+   * Suggest optimal focus timer settings
+   */
+  suggestFlowState: async (taskTitle: string) => {
+    const ai = AIService.getAi();
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Suggest an optimal focus duration (in minutes) and a quick tip to get into the flow state for this task: "${taskTitle}"`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              minutes: { type: Type.INTEGER },
+              tip: { type: Type.STRING }
+            },
+            required: ["minutes", "tip"]
+          }
+        }
+      });
+      return JSON.parse(response.text || '{"minutes": 25, "tip": "Just start for 5 minutes."}');
+    } catch (e) {
+      console.error("Flow state suggestion failed:", e);
+      return { minutes: 25, tip: "Stay focused!" };
+    }
+  },
+
+  getForumSuggestion: async (post: ForumPost): Promise<string> => {
+    const ai = AIService.getAi();
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `You are a helpful and scholarly student peer. Provide a concise, encouraging response to this forum post:
+        Title: ${post.title}
+        Content: ${post.content}`,
+      });
+      return response.text || "That's a very interesting topic! Thanks for sharing it with the community.";
+    } catch (error) {
+      return "Thanks for starting this discussion!";
+    }
+  },
+
+  getDailyInsight: async (profile: UserProfile, total: number, done: number): Promise<string> => {
+    const ai = AIService.getAi();
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Student ${profile.name} in ${profile.grade} completed ${done} out of ${total} tasks today. Give a short, powerful motivational quote in ${profile.language}.`,
+      });
+      return response.text || "Persistence is the key to success!";
+    } catch (error) { return "Focus on your goals!"; }
+  }
+};

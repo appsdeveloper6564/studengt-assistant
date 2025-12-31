@@ -1,5 +1,5 @@
 
-import { TaskItem, TimetableEntry, Routine, UserProfile, Achievement, Subject } from '../types';
+import { TaskItem, TimetableEntry, Routine, UserProfile, Achievement, Subject, Flashcard, ForumPost, DocResource, QuizResult, DocumentSummary, ChatMessage } from '../types';
 
 const STORAGE_KEYS = {
   TASKS: 'sa_tasks_v2',
@@ -9,6 +9,12 @@ const STORAGE_KEYS = {
   PROFILE: 'sa_profile_v2',
   ACHIEVEMENTS: 'sa_achievements_v2',
   SUBJECTS: 'sa_subjects_v2',
+  FLASHCARDS: 'sa_flashcards_v2',
+  FORUM_POSTS: 'sa_forum_posts_v2',
+  DOCS: 'sa_docs_v2',
+  QUIZ_RESULTS: 'sa_quiz_results_v2',
+  DOC_SUMMARIES: 'sa_doc_summaries_v2',
+  CHAT_HISTORY: 'sa_chat_history_v2',
   STREAK_DATE: 'sa_streak_date_v2',
   STREAK_COUNT: 'sa_streak_count_v2'
 };
@@ -32,9 +38,9 @@ const INITIAL_ACHIEVEMENTS: Achievement[] = [
 ];
 
 const INITIAL_SUBJECTS: Subject[] = [
-  { id: '1', name: 'Mathematics', color: '#2563eb' },
+  { id: '1', name: 'Mathematics', color: '#3b82f6' },
   { id: '2', name: 'Science', color: '#f97316' },
-  { id: '3', name: 'History', color: '#8b5cf6' }
+  { id: '3', name: 'History', color: '#a855f7' }
 ];
 
 export const StorageService = {
@@ -47,14 +53,36 @@ export const StorageService = {
   getRoutines: (): Routine[] => safeGet(STORAGE_KEYS.ROUTINE, []),
   saveRoutines: (routines: Routine[]) => localStorage.setItem(STORAGE_KEYS.ROUTINE, JSON.stringify(routines)),
 
-  getPoints: (): number => safeGet(STORAGE_KEYS.POINTS, 0),
+  getPoints: (): number => {
+    const p = localStorage.getItem(STORAGE_KEYS.POINTS);
+    // Welcome Bonus: 50 points
+    return p ? JSON.parse(p) : 50;
+  },
   savePoints: (points: number) => localStorage.setItem(STORAGE_KEYS.POINTS, JSON.stringify(points)),
 
-  getProfile: (): UserProfile => safeGet(STORAGE_KEYS.PROFILE, { name: '', grade: '', school: '', goal: '' }),
+  getProfile: (): UserProfile => safeGet(STORAGE_KEYS.PROFILE, { name: '', grade: '', school: '', goal: '', language: 'English' }),
   saveProfile: (profile: UserProfile) => localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile)),
 
   getSubjects: (): Subject[] => safeGet(STORAGE_KEYS.SUBJECTS, INITIAL_SUBJECTS),
   saveSubjects: (subjects: Subject[]) => localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(subjects)),
+
+  getFlashcards: (): Flashcard[] => safeGet(STORAGE_KEYS.FLASHCARDS, []),
+  saveFlashcards: (cards: Flashcard[]) => localStorage.setItem(STORAGE_KEYS.FLASHCARDS, JSON.stringify(cards)),
+
+  getForumPosts: (): ForumPost[] => safeGet(STORAGE_KEYS.FORUM_POSTS, []),
+  saveForumPosts: (posts: ForumPost[]) => localStorage.setItem(STORAGE_KEYS.FORUM_POSTS, JSON.stringify(posts)),
+
+  getDocs: (): DocResource[] => safeGet(STORAGE_KEYS.DOCS, []),
+  saveDocs: (docs: DocResource[]) => localStorage.setItem(STORAGE_KEYS.DOCS, JSON.stringify(docs)),
+
+  getQuizResults: (): QuizResult[] => safeGet(STORAGE_KEYS.QUIZ_RESULTS, []),
+  saveQuizResults: (results: QuizResult[]) => localStorage.setItem(STORAGE_KEYS.QUIZ_RESULTS, JSON.stringify(results)),
+
+  getDocSummaries: (): DocumentSummary[] => safeGet(STORAGE_KEYS.DOC_SUMMARIES, []),
+  saveDocSummaries: (summaries: DocumentSummary[]) => localStorage.setItem(STORAGE_KEYS.DOC_SUMMARIES, JSON.stringify(summaries)),
+
+  getChatHistory: (): ChatMessage[] => safeGet(STORAGE_KEYS.CHAT_HISTORY, []),
+  saveChatHistory: (history: ChatMessage[]) => localStorage.setItem(STORAGE_KEYS.CHAT_HISTORY, JSON.stringify(history)),
 
   getAchievements: (): Achievement[] => safeGet(STORAGE_KEYS.ACHIEVEMENTS, INITIAL_ACHIEVEMENTS),
   saveAchievements: (achievements: Achievement[]) => localStorage.setItem(STORAGE_KEYS.ACHIEVEMENTS, JSON.stringify(achievements)),

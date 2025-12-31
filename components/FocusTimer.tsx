@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-// Added Sparkles to the list of icons imported from lucide-react
-import { Play, Pause, RotateCcw, Coffee, Zap, Brain, Eye, ListTodo, CheckCircle, Target, ArrowLeft, Sparkles } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Zap, Brain, Eye, ListTodo, CheckCircle, Target, ArrowLeft, Sparkles, BrainCircuit, Loader2 } from 'lucide-react';
 import { TaskItem } from '../types';
 import AdsterraAd from './AdsterraAd';
+import { AIService } from '../services/ai';
 
 interface FocusTimerProps {
   tasks: TaskItem[];
@@ -16,6 +16,8 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ tasks, onUpdateTasks }) => {
   const [initialSeconds, setInitialSeconds] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<'study' | 'break'>('study');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiTip, setAiTip] = useState<string | null>(null);
 
   const pendingTasks = useMemo(() => tasks.filter(t => !t.isCompleted), [tasks]);
   const activeTask = useMemo(() => tasks.find(t => t.id === selectedTaskId), [tasks, selectedTaskId]);
@@ -34,6 +36,16 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ tasks, onUpdateTasks }) => {
     return () => clearInterval(interval);
   }, [isActive, seconds]);
 
+  const handleAiOptimize = async (task: TaskItem) => {
+    setIsAnalyzing(true);
+    const flow = await AIService.suggestFlowState(task.title);
+    setSeconds(flow.minutes * 60);
+    setInitialSeconds(flow.minutes * 60);
+    setAiTip(flow.tip);
+    setIsAnalyzing(false);
+    setSelectedTaskId(task.id);
+  };
+
   const formatTime = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
@@ -47,6 +59,7 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ tasks, onUpdateTasks }) => {
     setSeconds(taskMins * 60);
     setInitialSeconds(taskMins * 60);
     setMode('study');
+    setAiTip(null);
     setIsActive(false);
   };
 
@@ -78,23 +91,30 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ tasks, onUpdateTasks }) => {
           {pendingTasks.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {pendingTasks.map((task) => (
-                <button
-                  key={task.id}
-                  onClick={() => handleSelectTask(task)}
-                  className="group flex items-start gap-8 p-10 bg-slate-900/50 border border-slate-800 rounded-[3rem] text-left hover:bg-slate-900 hover:border-brand-purple hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
-                >
-                  <div className="w-16 h-16 rounded-[1.5rem] bg-slate-800 border border-slate-700 flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all shrink-0">
-                    <Brain size={32} />
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <h4 className="font-black text-2xl text-white mb-2 truncate group-hover:text-brand-purple transition-colors">{task.title}</h4>
-                    <div className="flex items-center gap-3">
-                       <span className="text-[10px] font-black uppercase text-brand-orange bg-brand-orange/10 border border-brand-orange/20 px-4 py-1.5 rounded-full tracking-widest">
-                         {task.durationMinutes || 45} MINUTE MISSION
-                       </span>
+                <div key={task.id} className="relative group">
+                  <button
+                    onClick={() => handleSelectTask(task)}
+                    className="w-full flex items-start gap-8 p-10 bg-slate-900/50 border border-slate-800 rounded-[3rem] text-left hover:bg-slate-900 hover:border-brand-purple hover:shadow-2xl transition-all duration-500"
+                  >
+                    <div className="w-16 h-16 rounded-[1.5rem] bg-slate-800 border border-slate-700 flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition-all shrink-0">
+                      <Brain size={32} />
                     </div>
-                  </div>
-                </button>
+                    <div className="flex-1 overflow-hidden">
+                      <h4 className="font-black text-2xl text-white mb-2 truncate group-hover:text-brand-purple transition-colors">{task.title}</h4>
+                      <div className="flex items-center gap-3">
+                         <span className="text-[10px] font-black uppercase text-brand-orange bg-brand-orange/10 border border-brand-orange/20 px-4 py-1.5 rounded-full tracking-widest">
+                           {task.durationMinutes || 45} MIN MISSION
+                         </span>
+                      </div>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => handleAiOptimize(task)}
+                    className="absolute top-4 right-4 p-3 bg-brand-purple/20 text-brand-purple rounded-xl border border-brand-purple/20 opacity-0 group-hover:opacity-100 transition-all hover:bg-brand-purple hover:text-white"
+                  >
+                    {isAnalyzing && selectedTaskId === task.id ? <Loader2 className="animate-spin" size={18} /> : <BrainCircuit size={18} />}
+                  </button>
+                </div>
               ))}
             </div>
           ) : (
@@ -135,7 +155,7 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ tasks, onUpdateTasks }) => {
             <h2 className="text-5xl lg:text-6xl font-black text-white tracking-tighter mb-4 max-w-2xl leading-[1.1]">
               {activeTask?.title}
             </h2>
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-[0.5em] opacity-60">Strategic focus window</p>
+            {aiTip && <p className="text-brand-purple font-black text-xs uppercase tracking-widest mt-2 animate-pulse">💡 Guru Tip: {aiTip}</p>}
           </div>
 
           <div className="relative mb-20">

@@ -1,8 +1,10 @@
 
 import React, { useState } from 'react';
 import { Routine } from '../types';
-import { CheckCircle2, Circle, Plus, Trash2, LayoutList, AlertCircle, Timer, Sparkles } from 'lucide-react';
+import { CheckCircle2, Circle, Plus, Trash2, LayoutList, AlertCircle, Timer, Sparkles, BrainCircuit, Loader2 } from 'lucide-react';
 import AdsterraAd from './AdsterraAd';
+import { AIService } from '../services/ai';
+import { StorageService } from '../services/storage';
 
 interface RoutineTrackerProps {
   routines: Routine[];
@@ -14,6 +16,20 @@ const RoutineTracker: React.FC<RoutineTrackerProps> = ({ routines, onUpdateRouti
   const [newTitle, setNewTitle] = useState('');
   const [newTime, setNewTime] = useState('');
   const [newDuration, setNewDuration] = useState('45');
+  const [isAiSuggesting, setIsAiSuggesting] = useState(false);
+  const profile = StorageService.getProfile();
+
+  const handleAiSuggest = async () => {
+    if (isAiSuggesting) return;
+    setIsAiSuggesting(true);
+    const suggested = await AIService.suggestHabits(profile.grade, profile.language || 'English');
+    if (suggested.length > 0) {
+      if (confirm(`AI Guru suggests ${suggested.length} new habits. Add them to your list?`)) {
+        suggested.forEach(r => onAddRoutine(r));
+      }
+    }
+    setIsAiSuggesting(false);
+  };
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,14 +50,23 @@ const RoutineTracker: React.FC<RoutineTrackerProps> = ({ routines, onUpdateRouti
   return (
     <div className="max-w-3xl mx-auto space-y-12 animate-in slide-in-from-right-4 duration-500 pb-20">
       <div className="bg-[#0f172a] p-10 lg:p-16 rounded-[4rem] border border-slate-800 shadow-2xl">
-         <div className="flex items-center gap-6 mb-12">
-            <div className="w-16 h-16 bg-brand-orange text-white rounded-[2rem] flex items-center justify-center shadow-xl neon-orange">
-               <Sparkles size={32} />
+         <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-brand-orange text-white rounded-[2rem] flex items-center justify-center shadow-xl neon-orange">
+                 <Sparkles size={32} />
+              </div>
+              <div>
+                 <h2 className="text-4xl font-black text-white tracking-tight">Daily Rituals</h2>
+                 <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-1">Consistency creates scholars</p>
+              </div>
             </div>
-            <div>
-               <h2 className="text-4xl font-black text-white tracking-tight">Daily Rituals</h2>
-               <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-1">Consistency creates scholars</p>
-            </div>
+            <button 
+              onClick={handleAiSuggest}
+              disabled={isAiSuggesting}
+              className="p-4 bg-brand-purple/10 text-brand-purple border border-brand-purple/20 rounded-2xl hover:bg-brand-purple hover:text-white transition-all shadow-xl"
+            >
+              {isAiSuggesting ? <Loader2 className="animate-spin" size={24} /> : <BrainCircuit size={24} />}
+            </button>
          </div>
 
          <form onSubmit={handleAdd} className="space-y-6 mb-16">

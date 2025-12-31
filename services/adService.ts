@@ -16,11 +16,9 @@ export const AdService = {
    */
   showSmartlink: () => {
     try {
-      // We open in a new tab to avoid breaking the user's session
       window.open(AdService.SMART_LINK, '_blank', 'noopener,noreferrer');
     } catch (e) {
-      console.error("Ad block detected or popup blocked.");
-      // Fallback: simple redirect if popup fails
+      console.error("Popup blocked, falling back to redirect.");
       window.location.href = AdService.SMART_LINK;
     }
   }

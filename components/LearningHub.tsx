@@ -1,39 +1,134 @@
 
 import React, { useState } from 'react';
-import { Subject, Flashcard } from '../types';
-import { Brain, FileText, ChevronRight, BookOpen, RotateCcw, Plus, Trash2 } from 'lucide-react';
+import { Subject, Flashcard, DocumentSummary } from '../types';
+import { Brain, FileText, ChevronRight, BookOpen, RotateCcw, Plus, Trash2, X, Sparkles, Loader2, PlayCircle } from 'lucide-react';
+import { StorageService } from '../services/storage';
+import { GoogleGenAI, Type } from "@google/genai";
+import { AIService } from '../services/ai';
 
 interface LearningHubProps {
   subjects: Subject[];
 }
 
 const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
-  const [activeTab, setActiveTab] = useState<'flashcards' | 'notes'>('flashcards');
+  const [activeTab, setActiveTab] = useState<'flashcards' | 'notes' | 'ai-summaries'>('flashcards');
   const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]?.id || '');
-  const [flashcards, setFlashcards] = useState<Flashcard[]>([
-    { id: '1', front: 'What is the powerhouse of the cell?', back: 'Mitochondria', subjectId: '2' },
-    { id: '2', front: 'Formula for Newton\'s Second Law?', back: 'F = ma', subjectId: '2' },
-  ]);
+  const [flashcards, setFlashcards] = useState<Flashcard[]>(StorageService.getFlashcards());
+  const [summaries, setSummaries] = useState<DocumentSummary[]>(StorageService.getDocSummaries());
   const [currentCardIdx, setCurrentCardIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState<string | null>(null);
+  
+  const [newFront, setNewFront] = useState('');
+  const [newBack, setNewBack] = useState('');
+  const [summaryInput, setSummaryInput] = useState('');
 
   const filteredCards = flashcards.filter(c => c.subjectId === selectedSubject);
 
+  const handleAddCard = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFront.trim() || !newBack.trim()) return;
+    const newCard: Flashcard = {
+      id: crypto.randomUUID(),
+      front: newFront,
+      back: newBack,
+      subjectId: selectedSubject
+    };
+    const updated = [...flashcards, newCard];
+    setFlashcards(updated);
+    StorageService.saveFlashcards(updated);
+    setNewFront('');
+    setNewBack('');
+    setIsAdding(false);
+  };
+
+  const generateQuizFromSummary = async (summary: DocumentSummary) => {
+    setIsGeneratingQuiz(summary.id);
+    const quiz = await AIService.generateQuiz(summary.summary);
+    if (quiz) {
+      alert(`AI has generated a quiz: "${quiz.title}". You can now find it in the Mock Tests section.`);
+      // In a real app, we'd save this to the 'quizzes' table in Supabase
+    }
+    setIsGeneratingQuiz(null);
+  };
+
+  const handleSummarize = async () => {
+    if (!summaryInput.trim() || isSummarizing) return;
+    setIsSummarizing(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const prompt = `Summarize: "${summaryInput.substring(0, 4000)}". Generate 3 flashcards.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              summary: { type: Type.STRING },
+              flashcards: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: { front: { type: Type.STRING }, back: { type: Type.STRING } },
+                  required: ["front", "back"]
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const data = JSON.parse(response.text || '{}');
+      const newSummary: DocumentSummary = {
+        id: crypto.randomUUID(),
+        title: summaryInput.substring(0, 30) + '...',
+        summary: data.summary,
+        flashcards: data.flashcards
+      };
+
+      const updatedSummaries = [newSummary, ...summaries];
+      setSummaries(updatedSummaries);
+      StorageService.saveDocSummaries(updatedSummaries);
+
+      const newGeneratedCards: Flashcard[] = data.flashcards.map((f: any) => ({
+        id: crypto.randomUUID(),
+        front: f.front,
+        back: f.back,
+        subjectId: selectedSubject
+      }));
+      
+      const updatedFlashcards = [...flashcards, ...newGeneratedCards];
+      setFlashcards(updatedFlashcards);
+      StorageService.saveFlashcards(updatedFlashcards);
+
+      setSummaryInput('');
+    } catch (err) {
+      alert("AI Error.");
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between bg-slate-900/50 p-6 rounded-[2rem] border border-slate-800">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+      <div className="flex flex-col sm:flex-row items-center justify-between bg-slate-900/50 p-6 rounded-[2rem] border border-slate-800 gap-4">
         <div>
           <h2 className="text-3xl font-black text-white">Learning <span className="text-brand-blue">Hub</span></h2>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Interactive Study Materials</p>
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">AI-Powered Revision</p>
         </div>
-        <div className="flex gap-2">
-          {(['flashcards', 'notes'] as const).map(tab => (
+        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto no-scrollbar">
+          {(['flashcards', 'notes', 'ai-summaries'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-brand-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-200'}`}
+              className={`flex-1 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? 'bg-brand-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-200'}`}
             >
-              {tab}
+              {tab === 'ai-summaries' ? 'AI Summaries' : tab}
             </button>
           ))}
         </div>
@@ -43,8 +138,8 @@ const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
         {subjects.map(s => (
           <button
             key={s.id}
-            onClick={() => { setSelectedSubject(s.id); setCurrentCardIdx(0); setIsFlipped(false); }}
-            className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all shrink-0 ${selectedSubject === s.id ? 'bg-white text-slate-900 border-white' : 'bg-slate-900/50 text-slate-500 border-slate-800'}`}
+            onClick={() => setSelectedSubject(s.id)}
+            className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all shrink-0 ${selectedSubject === s.id ? 'bg-white text-brand-deep border-white shadow-xl' : 'bg-slate-900/50 text-slate-500 border-slate-800'}`}
           >
             {s.name}
           </button>
@@ -55,68 +150,68 @@ const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
         <div className="flex flex-col items-center justify-center py-10 space-y-10">
           {filteredCards.length > 0 ? (
             <>
-              <div 
-                onClick={() => setIsFlipped(!isFlipped)}
-                className={`relative w-full max-w-md h-64 cursor-pointer perspective-1000 group`}
-              >
-                <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
-                  {/* Front */}
-                  <div className="absolute inset-0 bg-slate-900 border-2 border-slate-800 rounded-[3rem] flex items-center justify-center p-10 backface-hidden shadow-2xl">
-                    <p className="text-2xl font-black text-white text-center leading-tight">{filteredCards[currentCardIdx].front}</p>
+              <div onClick={() => setIsFlipped(!isFlipped)} className="relative w-full max-w-md h-72 cursor-pointer perspective-1000 group">
+                <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                  <div className="absolute inset-0 bg-slate-900 border-2 border-slate-800 rounded-[3rem] flex flex-col items-center justify-center p-10 backface-hidden shadow-2xl">
+                    <p className="text-2xl font-black text-white text-center">{filteredCards[currentCardIdx].front}</p>
                     <div className="absolute bottom-6 flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">
                        <RotateCcw size={12} /> Tap to flip
                     </div>
                   </div>
-                  {/* Back */}
                   <div className="absolute inset-0 bg-brand-blue border-2 border-brand-blue/50 rounded-[3rem] flex items-center justify-center p-10 rotate-y-180 backface-hidden shadow-2xl">
-                    <p className="text-2xl font-black text-white text-center leading-tight">{filteredCards[currentCardIdx].back}</p>
+                    <p className="text-2xl font-black text-white text-center">{filteredCards[currentCardIdx].back}</p>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-10">
-                <button 
-                  onClick={() => { setCurrentCardIdx(prev => Math.max(0, prev - 1)); setIsFlipped(false); }}
-                  disabled={currentCardIdx === 0}
-                  className="w-16 h-16 bg-slate-800 text-white rounded-full flex items-center justify-center disabled:opacity-30"
-                >
-                  <ChevronRight className="rotate-180" size={24} />
-                </button>
-                <span className="text-xl font-black text-slate-500">{currentCardIdx + 1} / {filteredCards.length}</span>
-                <button 
-                  onClick={() => { setCurrentCardIdx(prev => Math.min(filteredCards.length - 1, prev + 1)); setIsFlipped(false); }}
-                  disabled={currentCardIdx === filteredCards.length - 1}
-                  className="w-16 h-16 bg-brand-blue text-white rounded-full flex items-center justify-center disabled:opacity-30"
-                >
-                  <ChevronRight size={24} />
-                </button>
+              <div className="flex items-center gap-6">
+                <button onClick={() => setCurrentCardIdx(p => Math.max(0, p-1))} className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center"><ChevronRight className="rotate-180" /></button>
+                <span className="font-black">{currentCardIdx + 1} / {filteredCards.length}</span>
+                <button onClick={() => setCurrentCardIdx(p => Math.min(filteredCards.length-1, p+1))} className="w-14 h-14 bg-brand-blue rounded-2xl flex items-center justify-center"><ChevronRight /></button>
               </div>
             </>
           ) : (
-            <div className="text-center py-20 bg-slate-900/30 rounded-[3rem] border border-dashed border-slate-800 w-full">
-              <BookOpen size={64} className="mx-auto text-slate-700 mb-6" />
-              <p className="text-slate-500 font-black uppercase tracking-widest text-sm">No flashcards for this subject</p>
+            <div className="text-center py-20 border-2 border-dashed border-slate-800 rounded-[3rem] w-full">
+              <BookOpen size={48} className="mx-auto mb-4 text-slate-700" />
+              <p className="text-slate-500 font-bold">No cards here. Use AI Summaries to generate some!</p>
             </div>
           )}
         </div>
       )}
 
-      {activeTab === 'notes' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           {[1, 2, 3].map(n => (
-             <div key={n} className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800 hover:border-brand-blue/50 transition-all group flex items-start gap-6">
-                <div className="w-14 h-14 bg-brand-blue/10 text-brand-blue rounded-2xl flex items-center justify-center shrink-0 border border-brand-blue/20">
-                   <FileText size={24} />
-                </div>
-                <div className="flex-1">
-                   <h4 className="text-xl font-black text-white mb-1 group-hover:text-brand-blue transition-colors">Digital Notes - Lecture {n}</h4>
-                   <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-4">Last Modified: 2 days ago</p>
-                   <div className="flex gap-2">
-                      <button className="px-4 py-2 bg-slate-800 text-xs font-black rounded-lg hover:bg-slate-700 transition-colors">READ</button>
-                      <button className="px-4 py-2 bg-brand-blue text-xs font-black rounded-lg shadow-lg">STUDY</button>
-                   </div>
-                </div>
-             </div>
-           ))}
+      {activeTab === 'ai-summaries' && (
+        <div className="space-y-8 max-w-4xl mx-auto">
+          <div className="bg-slate-900/50 p-8 rounded-[3rem] border border-slate-800 space-y-6">
+            <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <Sparkles size={20} className="text-brand-orange" /> Note Alchemist
+            </h3>
+            <textarea 
+              value={summaryInput}
+              onChange={e => setSummaryInput(e.target.value)}
+              placeholder="Paste text here..."
+              rows={6}
+              className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-6 text-sm font-medium outline-none text-slate-200"
+            />
+            <button onClick={handleSummarize} disabled={isSummarizing} className="w-full py-4 bg-festive-gradient text-white font-black rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
+              {isSummarizing ? <Loader2 className="animate-spin" /> : <Sparkles />} Generate Analysis
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {summaries.map(s => (
+              <div key={s.id} className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 space-y-4">
+                <h4 className="font-black text-white truncate">{s.title}</h4>
+                <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed italic">"{s.summary}"</p>
+                <button 
+                  onClick={() => generateQuizFromSummary(s)} 
+                  disabled={!!isGeneratingQuiz}
+                  className="w-full py-3 bg-brand-blue/10 border border-brand-blue/20 text-brand-blue rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-blue hover:text-white transition-all"
+                >
+                  {isGeneratingQuiz === s.id ? <Loader2 className="animate-spin" size={14} /> : <PlayCircle size={14} />} 
+                  Generate AI Quiz
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

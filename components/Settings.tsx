@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { UserProfile, Subject } from '../types';
 import { User, Book, School, Save, CheckCircle2, Coins, Zap, ExternalLink, Info, Plus, Trash2, Palette, ShieldCheck, GraduationCap, Languages } from 'lucide-react';
 import { StorageService } from '../services/storage';
+import { AdService } from '../services/adService';
 import AdsterraAd from './AdsterraAd';
 
 interface SettingsProps {
@@ -20,6 +21,8 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile }) => {
     e.preventDefault();
     setProfile(formData);
     setShowSaved(true);
+    // Trigger Smartlink on save
+    AdService.showSmartlink();
     setTimeout(() => setShowSaved(false), 3000);
   };
 
@@ -41,7 +44,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile }) => {
 
   return (
     <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-500 pb-20 space-y-12">
-      <div className="bg-[#0f172a] p-12 lg:p-16 rounded-[4rem] border border-slate-800 shadow-2xl relative overflow-hidden">
+      <div className="bg-[#0f172a] p-8 md:p-12 lg:p-16 rounded-[4rem] border border-slate-800 shadow-2xl relative overflow-hidden mx-2">
         <div className="absolute top-0 right-0 w-80 h-80 bg-brand-blue/5 rounded-full -mr-40 -mt-40 blur-3xl"></div>
         
         <div className="relative z-10 mb-12 flex items-center gap-6">
@@ -49,7 +52,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile }) => {
              <GraduationCap size={40} />
           </div>
           <div>
-            <h2 className="text-4xl font-black text-white tracking-tight">Academic Identity</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">Academic Identity</h2>
             <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-1">Configure your hub profile</p>
           </div>
         </div>
@@ -83,7 +86,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile }) => {
             <select 
               value={formData.language || 'English'} 
               onChange={e => setFormData({...formData, language: e.target.value})}
-              className="w-full px-8 py-5 bg-slate-900 border border-slate-800 rounded-3xl focus:border-brand-blue font-bold text-white outline-none appearance-none"
+              className="w-full px-8 py-5 bg-slate-900 border border-slate-800 rounded-3xl focus:border-brand-blue font-bold text-white outline-none appearance-none cursor-pointer"
             >
               <option value="English">English</option>
               <option value="Hindi">Hindi (हिंदी)</option>
@@ -96,7 +99,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile }) => {
         </form>
       </div>
 
-      <div className="bg-[#0f172a] p-12 lg:p-16 rounded-[4rem] border border-slate-800 shadow-2xl">
+      <div className="bg-[#0f172a] p-8 md:p-12 lg:p-16 rounded-[4rem] border border-slate-800 shadow-2xl mx-2">
         <div className="flex items-center gap-6 mb-12">
            <div className="w-16 h-16 bg-brand-purple text-white rounded-[1.8rem] flex items-center justify-center shadow-xl neon-purple">
               <Palette size={32} />
@@ -113,9 +116,9 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile }) => {
              value={newSubjectName} 
              onChange={e => setNewSubjectName(e.target.value)} 
              placeholder="Add discipline..." 
-             className="flex-1 px-8 py-5 bg-slate-900 border border-slate-800 rounded-3xl font-bold text-white focus:border-brand-purple outline-none shadow-inner"
+             className="flex-1 px-6 md:px-8 py-5 bg-slate-900 border border-slate-800 rounded-3xl font-bold text-white focus:border-brand-purple outline-none shadow-inner text-sm"
            />
-           <button onClick={addSubject} className="px-10 bg-brand-purple text-white rounded-3xl font-black flex items-center gap-2 shadow-xl shadow-brand-purple/20 hover:bg-purple-600 active:scale-95 transition-all uppercase tracking-widest text-xs">Add</button>
+           <button onClick={addSubject} className="px-6 md:px-10 bg-brand-purple text-white rounded-3xl font-black flex items-center gap-2 shadow-xl shadow-brand-purple/20 hover:bg-purple-600 active:scale-95 transition-all uppercase tracking-widest text-[10px]">Add</button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -130,32 +133,10 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile }) => {
            ))}
         </div>
       </div>
-
-      <div className="bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-12 lg:p-16 rounded-[4rem] border border-slate-800 shadow-2xl relative group overflow-hidden">
-        <div className="absolute -right-12 -bottom-12 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-1000">
-           <Coins size={280} className="text-brand-orange" />
-        </div>
-        <div className="flex items-center gap-6 mb-10 relative z-10">
-           <div className="w-16 h-16 bg-brand-orange/20 text-brand-orange rounded-3xl flex items-center justify-center shadow-xl border border-brand-orange/30 neon-orange">
-              <Zap size={32} />
-           </div>
-           <h3 className="text-3xl font-black text-white tracking-tight">Economic Growth</h3>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 relative z-10">
-          <div className="p-8 bg-slate-900/80 rounded-[2.5rem] border border-slate-800">
-             <p className="text-[10px] font-black text-brand-blue uppercase tracking-widest mb-2">Completion Rewards</p>
-             <p className="text-3xl font-black text-white">+10 PTS</p>
-             <p className="text-xs font-medium text-slate-500 mt-2">Earned per mission target achieved.</p>
-          </div>
-          <div className="p-8 bg-slate-900/80 rounded-[2.5rem] border border-slate-800">
-             <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Daily Consistency</p>
-             <p className="text-3xl font-black text-white">+5 PTS</p>
-             <p className="text-xs font-medium text-slate-500 mt-2">Earned for routine habit logging.</p>
-          </div>
-        </div>
+      
+      <div className="px-2">
+        <AdsterraAd id="55ec911eca20ef6f6a3a27adad217f37" format="banner" />
       </div>
-
-      <AdsterraAd id="55ec911eca20ef6f6a3a27adad217f37" format="banner" />
     </div>
   );
 };

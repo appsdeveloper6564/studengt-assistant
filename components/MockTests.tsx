@@ -1,7 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Subject, Quiz } from '../types';
-import { BookOpen, Timer, ChevronRight, CheckCircle2, AlertCircle, Trophy, RotateCcw } from 'lucide-react';
+import { Subject, Quiz, QuizResult } from '../types';
+import { BookOpen, Timer, ChevronRight, CheckCircle2, AlertCircle, Trophy, RotateCcw, TrendingUp, Sparkles, Loader2, Wand2 } from 'lucide-react';
+import { StorageService } from '../services/storage';
+import { AIService } from '../services/ai';
+import { AdService } from '../services/adService';
 
 interface MockTestsProps {
   subjects: Subject[];
@@ -9,41 +12,76 @@ interface MockTestsProps {
 
 const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
+  const [results, setResults] = useState<QuizResult[]>(StorageService.getQuizResults());
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [topicInput, setTopicInput] = useState('');
+  
   const [quizzes] = useState<Quiz[]>([
     {
       id: '1', title: 'Biology Foundations', subjectId: '2',
       questions: [
         { question: "Which organelle is responsible for cellular respiration?", options: ["Ribosome", "Mitochondria", "Nucleus", "Vacuole"], correctAnswer: 1 },
-        { question: "What is the primary function of DNA?", options: ["Energy Storage", "Structural Support", "Genetic Encoding", "Transport"], correctAnswer: 2 }
-      ]
-    },
-    {
-      id: '2', title: 'Physics Laws', subjectId: '2',
-      questions: [
-        { question: "What is the unit of force?", options: ["Joule", "Watt", "Newton", "Pascal"], correctAnswer: 2 }
+        { question: "What is the primary function of DNA?", options: ["Energy Storage", "Structural Support", "Genetic Encoding", "Transport"], correctAnswer: 2 },
+        { question: "Who is known as the father of genetics?", options: ["Darwin", "Mendel", "Einstein", "Pasteur"], correctAnswer: 1 }
       ]
     }
   ]);
+
+  const profile = StorageService.getProfile();
+
+  const generateAiQuiz = async () => {
+    if (!topicInput.trim() || isGenerating) return;
+    setIsGenerating(true);
+    const quiz = await AIService.generateCustomQuiz(topicInput, profile.grade);
+    if (quiz) {
+      startQuiz(quiz);
+      setTopicInput('');
+    } else {
+      alert("Guru is busy. Try a different topic!");
+    }
+    setIsGenerating(false);
+  };
+
+  const handleAnalyzeResults = () => {
+    AdService.showSmartlink();
+    alert("Analyzing deep performance data... (Redirecting to results server)");
+  };
 
   useEffect(() => {
     let timer: any;
     if (activeQuiz && timeLeft > 0 && !isFinished) {
       timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
     } else if (timeLeft === 0 && activeQuiz && !isFinished) {
-      setIsFinished(true);
+      handleQuizEnd();
     }
     return () => clearInterval(timer);
   }, [activeQuiz, timeLeft, isFinished]);
+
+  const handleQuizEnd = () => {
+    setIsFinished(true);
+    if (activeQuiz) {
+      const newResult: QuizResult = {
+        id: crypto.randomUUID(),
+        quizTitle: activeQuiz.title,
+        score,
+        total: activeQuiz.questions.length,
+        date: new Date().toLocaleDateString()
+      };
+      const updatedResults = [newResult, ...results];
+      setResults(updatedResults);
+      StorageService.saveQuizResults(updatedResults);
+    }
+  };
 
   const startQuiz = (quiz: Quiz) => {
     setActiveQuiz(quiz);
     setCurrentQuestion(0);
     setScore(0);
-    setTimeLeft(quiz.questions.length * 60); // 1 min per q
+    setTimeLeft(quiz.questions.length * 60); 
     setIsFinished(false);
   };
 
@@ -55,7 +93,7 @@ const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
     if (currentQuestion < activeQuiz!.questions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
-      setIsFinished(true);
+      handleQuizEnd();
     }
   };
 
@@ -69,13 +107,18 @@ const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
         </div>
         <div>
            <h2 className="text-4xl font-black text-white mb-2">Quiz Concluded!</h2>
-           <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Analytics for {activeQuiz.title}</p>
+           <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Performance Analysis</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-10 rounded-[3rem] shadow-2xl">
            <div className="text-7xl font-black text-brand-blue mb-4">{Math.round((score/activeQuiz.questions.length)*100)}%</div>
-           <p className="text-xl font-bold text-slate-300">You scored {score} out of {activeQuiz.questions.length}</p>
+           <p className="text-xl font-bold text-slate-300">Accuracy: {score} / {activeQuiz.questions.length}</p>
         </div>
-        <button onClick={() => setActiveQuiz(null)} className="px-10 py-5 bg-brand-blue text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl active:scale-95 transition-all">Back to Tests</button>
+        <div className="flex gap-4 justify-center">
+          <button onClick={() => setActiveQuiz(null)} className="px-10 py-5 bg-slate-800 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl active:scale-95 transition-all">Back</button>
+          <button onClick={handleAnalyzeResults} className="px-10 py-5 bg-brand-orange text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2">
+            <TrendingUp size={18}/> Detailed Analysis (AD)
+          </button>
+        </div>
       </div>
     );
   }
@@ -118,31 +161,69 @@ const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-500">
-      <div className="bg-festive-gradient p-12 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
-         <div className="relative z-10 max-w-lg">
-            <h2 className="text-5xl font-black mb-4 tracking-tight">Mock Tests</h2>
-            <p className="text-blue-50 text-xl font-medium mb-8 leading-relaxed">Simulate real exams and track your performance analytics.</p>
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-500 pb-20">
+      {/* AI Quiz Generator Banner */}
+      <div className="bg-[#0f172a] p-10 lg:p-16 rounded-[4rem] border border-slate-800 shadow-2xl relative overflow-hidden">
+         <div className="relative z-10 space-y-8">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-brand-purple text-white rounded-3xl flex items-center justify-center shadow-2xl neon-purple">
+                 <Wand2 size={32} />
+              </div>
+              <div>
+                 <h2 className="text-4xl font-black text-white tracking-tight">AI Mock Generator</h2>
+                 <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-1">Instant academic assessments</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+               <input 
+                 type="text" 
+                 value={topicInput}
+                 onChange={e => setTopicInput(e.target.value)}
+                 placeholder="Enter topic (e.g., Quantum Physics, Mughal Empire)..." 
+                 className="flex-1 px-8 py-5 bg-slate-900 border border-slate-800 rounded-3xl text-white font-bold outline-none focus:border-brand-purple" 
+               />
+               <button 
+                 onClick={generateAiQuiz}
+                 disabled={isGenerating || !topicInput.trim()}
+                 className="px-10 py-5 bg-brand-purple text-white rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3"
+               >
+                 {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />} Generate Quiz
+               </button>
+            </div>
          </div>
-         <BookOpen size={180} className="absolute -bottom-10 -right-10 opacity-20 rotate-12" />
+         <div className="absolute top-0 right-0 w-80 h-80 bg-brand-purple/5 rounded-full -mr-40 -mt-40 blur-3xl"></div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {quizzes.map(quiz => (
-          <div key={quiz.id} className="bg-[#0f172a] p-8 rounded-[2.5rem] border border-slate-800 hover:border-brand-blue/40 transition-all group flex flex-col h-full shadow-lg">
-             <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-all shadow-inner">
-                   <RotateCcw size={20} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+          {quizzes.map(quiz => (
+            <div key={quiz.id} className="bg-[#0f172a] p-8 rounded-[2.5rem] border border-slate-800 hover:border-brand-blue/40 transition-all group flex flex-col h-full shadow-lg">
+              <h4 className="text-2xl font-black text-white mb-2 tracking-tight">{quiz.title}</h4>
+              <p className="text-xs text-slate-500 font-bold mb-10">{quiz.questions.length} Questions • {quiz.questions.length} Minutes</p>
+              <button onClick={() => startQuiz(quiz)} className="mt-auto w-full py-4 bg-brand-blue text-white font-black rounded-2xl hover:bg-blue-600 shadow-xl shadow-brand-blue/20 transition-all uppercase tracking-widest text-xs active:scale-95">Start Assessment</button>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-slate-900/50 p-10 rounded-[3rem] border border-slate-800 space-y-8">
+          <h3 className="text-xl font-black text-white flex items-center gap-3"><TrendingUp size={24} className="text-brand-orange" /> Performance History</h3>
+          <div className="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar">
+            {results.length > 0 ? results.map(r => (
+              <div key={r.id} className="p-6 bg-slate-900 rounded-2xl border border-slate-800 flex justify-between items-center">
+                <div>
+                  <p className="text-xs font-black text-white truncate max-w-[150px]">{r.quizTitle}</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">{r.date}</p>
                 </div>
-                <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                   Live Attempt
+                <div className="text-right">
+                  <p className="text-xl font-black text-brand-blue">{Math.round((r.score/r.total)*100)}%</p>
+                  <p className="text-[9px] font-black text-slate-500">{r.score}/{r.total} CORRECT</p>
                 </div>
-             </div>
-             <h4 className="text-2xl font-black text-white mb-2 tracking-tight">{quiz.title}</h4>
-             <p className="text-xs text-slate-500 font-bold mb-10">{quiz.questions.length} Questions • {quiz.questions.length} Minutes</p>
-             <button onClick={() => startQuiz(quiz)} className="mt-auto w-full py-4 bg-brand-blue text-white font-black rounded-2xl hover:bg-blue-600 shadow-xl shadow-brand-blue/20 transition-all uppercase tracking-widest text-xs active:scale-95">Start Assessment</button>
+              </div>
+            )) : (
+              <p className="text-center text-slate-600 font-bold uppercase tracking-widest text-[10px] py-10">No attempts yet</p>
+            )}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );

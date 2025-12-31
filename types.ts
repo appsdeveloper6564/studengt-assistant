@@ -53,11 +53,26 @@ export interface Routine {
   durationMinutes?: number;
 }
 
-export interface Exam {
+export interface QuizResult {
   id: string;
-  name: string;
+  quizTitle: string;
+  score: number;
+  total: number;
   date: string;
-  color: string;
+}
+
+export interface DocumentSummary {
+  id: string;
+  title: string;
+  summary: string;
+  flashcards: { front: string; back: string }[];
+}
+
+export interface ChatMessage {
+  role: 'user' | 'ai';
+  content: string;
+  image?: string;
+  timestamp: string;
 }
 
 export interface Quiz {
@@ -95,6 +110,7 @@ export interface DocResource {
   type: 'pdf' | 'doc' | 'video';
   subjectId: string;
   size?: string;
+  tags?: string[];
 }
 
 export interface Achievement {
@@ -108,4 +124,4 @@ export interface Achievement {
   unlockedAt?: string;
 }
 
-export type View = 'dashboard' | 'calendar' | 'tasks' | 'timetable' | 'routine' | 'ai-coach' | 'settings' | 'achievements' | 'focus-timer' | 'mock-tests' | 'learning-hub' | 'forum' | 'docs';
+export type View = 'dashboard' | 'calendar' | 'tasks' | 'timetable' | 'routine' | 'ai-coach' | 'settings' | 'achievements' | 'focus-timer' | 'mock-tests' | 'learning-hub' | 'forum' | 'docs' | 'help';

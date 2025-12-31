@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
 import { TaskItem, Priority, Subject, Recurrence, SubTask } from '../types';
-import { Plus, Trash2, CheckCircle2, Circle, Search, Clock, ListTodo, X, Timer, Download, Tag, Repeat, ListChecks, CheckCircle, ChevronDown, Flag } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, Circle, Search, Clock, ListTodo, X, Timer, Download, Tag, Repeat, ListChecks, CheckCircle, ChevronDown, Flag, Wand2, Loader2, BrainCircuit, Sparkles } from 'lucide-react';
 import { StorageService } from '../services/storage';
+import { AIService } from '../services/ai';
 import AdsterraAd from './AdsterraAd';
-import { AdService } from '../services/adService';
 
 interface TasksProps {
   tasks: TaskItem[];
@@ -14,6 +14,8 @@ interface TasksProps {
 
 const Tasks: React.FC<TasksProps> = ({ tasks, onUpdateTasks, onAddTask }) => {
   const [isAdding, setIsAdding] = useState(false);
+  const [isBreakingDown, setIsBreakingDown] = useState(false);
+  const [isPrioritizing, setIsPrioritizing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'All' | 'Pending' | 'Completed'>('All');
   const [subjects] = useState<Subject[]>(StorageService.getSubjects());
@@ -26,6 +28,25 @@ const Tasks: React.FC<TasksProps> = ({ tasks, onUpdateTasks, onAddTask }) => {
   const [newRecurrence, setNewRecurrence] = useState<Recurrence>('None');
   const [newSubtasks, setNewSubtasks] = useState<{title: string}[]>([]);
   const [currentSubtaskInput, setCurrentSubtaskInput] = useState('');
+
+  const handleAiPrioritize = async () => {
+    if (tasks.length === 0 || isPrioritizing) return;
+    setIsPrioritizing(true);
+    const suggestions = await AIService.suggestPriority(tasks.filter(t => !t.isCompleted));
+    if (suggestions.length > 0) {
+      const msg = suggestions.map((s: any) => `• ${s.taskTitle}: ${s.reason}`).join("\n\n");
+      alert("AI Guru Priority Suggestions:\n\n" + msg);
+    }
+    setIsPrioritizing(false);
+  };
+
+  const handleAiBreakdown = async () => {
+    if (!newTitle.trim() || isBreakingDown) return;
+    setIsBreakingDown(true);
+    const steps = await AIService.breakdownTask(newTitle);
+    setNewSubtasks(steps.map(s => ({ title: s })));
+    setIsBreakingDown(false);
+  };
 
   const handleAddSubtask = () => {
     if (!currentSubtaskInput.trim()) return;
@@ -82,23 +103,13 @@ const Tasks: React.FC<TasksProps> = ({ tasks, onUpdateTasks, onAddTask }) => {
   };
 
   const toggleComplete = (id: string) => {
-    const task = tasks.find(t => t.id === id);
-    if (task && !task.isCompleted) {
-      AdService.showSmartlink();
-    }
     onUpdateTasks(tasks.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t));
   };
 
   const toggleSubtask = (taskId: string, subtaskId: string) => {
     onUpdateTasks(tasks.map(t => {
       if (t.id === taskId && t.subtasks) {
-        const updatedSubtasks = t.subtasks.map(st => {
-          if (st.id === subtaskId) {
-            if (!st.isCompleted) AdService.showSmartlink();
-            return { ...st, isCompleted: !st.isCompleted };
-          }
-          return st;
-        });
+        const updatedSubtasks = t.subtasks.map(st => st.id === subtaskId ? { ...st, isCompleted: !st.isCompleted } : st);
         return { ...t, subtasks: updatedSubtasks };
       }
       return t;
@@ -130,17 +141,14 @@ const Tasks: React.FC<TasksProps> = ({ tasks, onUpdateTasks, onAddTask }) => {
         </div>
         
         <div className="flex flex-wrap gap-4 w-full lg:w-auto">
-          <div className="flex bg-[#0f172a] border border-slate-800 rounded-2xl p-1 shadow-inner">
-             {(['All', 'Pending', 'Completed'] as const).map((f) => (
-               <button 
-                 key={f} 
-                 onClick={() => setFilter(f)} 
-                 className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${filter === f ? 'bg-brand-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-               >
-                 {f}
-               </button>
-             ))}
-          </div>
+          <button 
+            onClick={handleAiPrioritize}
+            disabled={isPrioritizing}
+            className="p-4 bg-brand-purple/10 text-brand-purple border border-brand-purple/20 rounded-2xl hover:bg-brand-purple hover:text-white transition-all flex items-center gap-2 font-black shadow-lg"
+          >
+            {isPrioritizing ? <Loader2 className="animate-spin" size={20} /> : <BrainCircuit size={20} />}
+            <span className="hidden sm:inline">AI Prioritize</span>
+          </button>
           <button onClick={exportToCSV} className="p-4 bg-[#0f172a] text-slate-400 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all flex items-center gap-2 font-bold shadow-lg">
             <Download size={20} />
           </button>
@@ -168,7 +176,17 @@ const Tasks: React.FC<TasksProps> = ({ tasks, onUpdateTasks, onAddTask }) => {
             <form onSubmit={handleAddTask} className="p-10 space-y-8 max-h-[70vh] overflow-y-auto no-scrollbar">
               <div className="space-y-4">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Task Description</label>
-                <input required type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g., Mathematics - Integration Chapter" className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl focus:border-brand-blue font-bold text-slate-200 outline-none transition-all" />
+                <div className="flex gap-2">
+                  <input required type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g., Mathematics - Integration Chapter" className="flex-1 px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl focus:border-brand-blue font-bold text-slate-200 outline-none transition-all" />
+                  <button 
+                    type="button" 
+                    onClick={handleAiBreakdown}
+                    disabled={!newTitle.trim() || isBreakingDown}
+                    className="px-6 bg-brand-purple text-white rounded-2xl flex items-center gap-2 font-black text-[10px] uppercase tracking-widest hover:bg-purple-600 transition-all disabled:opacity-50"
+                  >
+                    {isBreakingDown ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} AI Breakdown
+                  </button>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -202,27 +220,12 @@ const Tasks: React.FC<TasksProps> = ({ tasks, onUpdateTasks, onAddTask }) => {
                 </div>
                 <div className="space-y-2 max-h-40 overflow-y-auto no-scrollbar">
                   {newSubtasks.map((st, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800/50 animate-in slide-in-from-left-2">
+                    <div key={i} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800/50">
                       <span className="text-xs font-bold text-slate-300 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-blue" /> {st.title}</span>
                       <button type="button" onClick={() => removeNewSubtask(i)} className="text-slate-600 hover:text-red-500"><Trash2 size={14}/></button>
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-8">
-                 <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Recurrence</label>
-                    <select value={newRecurrence} onChange={(e) => setNewRecurrence(e.target.value as Recurrence)} className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-slate-200">
-                      <option value="None">Once</option>
-                      <option value="Daily">Daily</option>
-                      <option value="Weekly">Weekly</option>
-                    </select>
-                 </div>
-                 <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Target Date</label>
-                    <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="w-full px-6 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-bold text-slate-200" />
-                 </div>
               </div>
 
               <button type="submit" className="w-full py-6 bg-brand-blue text-white font-black rounded-2xl shadow-xl shadow-brand-blue/20 uppercase tracking-[0.2em] text-sm hover:scale-[1.02] transition-all active:scale-95">
@@ -250,11 +253,6 @@ const Tasks: React.FC<TasksProps> = ({ tasks, onUpdateTasks, onAddTask }) => {
                   <div className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest flex items-center gap-1.5 shadow-sm ${task.priority === 'High' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20'}`}>
                     <Flag size={10} fill="currentColor" /> {task.priority}
                   </div>
-                  {subject && (
-                    <div className="text-[9px] font-black px-2.5 py-1 rounded-lg uppercase bg-slate-800/50 text-slate-400 border border-slate-700/50 flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: subject.color }} /> {subject.name}
-                    </div>
-                  )}
                 </div>
               </div>
               
@@ -268,15 +266,15 @@ const Tasks: React.FC<TasksProps> = ({ tasks, onUpdateTasks, onAddTask }) => {
                       <span>Breakdown</span>
                       <span className="text-brand-blue">{completedSubtasks}/{totalSubtasks} DONE</span>
                    </div>
-                   <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden shadow-inner">
-                      <div className="h-full bg-brand-blue transition-all duration-1000 ease-out shadow-lg" style={{ width: `${subProgress}%` }} />
+                   <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-brand-blue transition-all duration-1000 ease-out" style={{ width: `${subProgress}%` }} />
                    </div>
                    <div className="space-y-2.5 pt-2">
                       {task.subtasks?.map(st => (
                         <button 
                           key={st.id} 
                           onClick={() => toggleSubtask(task.id, st.id)}
-                          className={`w-full flex items-center gap-3 p-3.5 rounded-xl text-left transition-all ${st.isCompleted ? 'bg-emerald-500/5 text-emerald-500/40 border border-emerald-500/10' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700'}`}
+                          className={`w-full flex items-center gap-3 p-3.5 rounded-xl text-left transition-all ${st.isCompleted ? 'bg-emerald-500/5 text-emerald-500/40 border border-emerald-500/10' : 'bg-slate-900 border border-slate-800 text-slate-300'}`}
                         >
                            {st.isCompleted ? <CheckCircle size={14} className="shrink-0" /> : <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-700 shrink-0" />}
                            <span className={`text-xs font-bold truncate ${st.isCompleted ? 'line-through' : ''}`}>{st.title}</span>
@@ -286,36 +284,11 @@ const Tasks: React.FC<TasksProps> = ({ tasks, onUpdateTasks, onAddTask }) => {
                 </div>
               )}
               
-              <div className="mt-auto pt-6 border-t border-slate-800/50 flex flex-col gap-3">
-                 <div className="flex items-center gap-2 text-[10px] text-slate-500 font-black uppercase tracking-widest">
-                    <Clock size={14} className="text-brand-orange" />
-                    <span>Due: {task.dueDate}</span>
-                 </div>
-                 {task.durationMinutes && (
-                   <div className="flex items-center gap-2 text-[10px] text-brand-blue font-black uppercase tracking-widest">
-                      <Timer size={14} />
-                      <span>{task.durationMinutes}m Effort</span>
-                   </div>
-                 )}
-              </div>
-
-              <button onClick={() => deleteTask(task.id)} className="absolute bottom-6 right-6 p-3 text-slate-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all active:scale-90"><Trash2 size={20} /></button>
+              <button onClick={() => deleteTask(task.id)} className="absolute bottom-6 right-6 p-3 text-slate-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={20} /></button>
             </div>
           );
         })}
       </div>
-      
-      <div className="pt-10">
-        <AdsterraAd id="55ec911eca20ef6f6a3a27adad217f37" format="banner" />
-      </div>
-
-      {filteredTasks.length === 0 && (
-        <div className="py-32 text-center bg-[#0f172a] rounded-[4rem] border-2 border-dashed border-slate-800 animate-pulse">
-           <ListTodo size={64} className="mx-auto text-slate-800 mb-8" />
-           <h3 className="text-3xl font-black text-slate-700">Mission Log Empty</h3>
-           <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-4">Plan your next academic victory today</p>
-        </div>
-      )}
     </div>
   );
 };
