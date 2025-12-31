@@ -35,6 +35,34 @@ const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [showAuth, setShowAuth] = useState(false);
 
+  // Dynamic SEO Metadata Update
+  useEffect(() => {
+    const viewTitles: Record<View, string> = {
+      dashboard: 'Dashboard | Scholar Hub Pro',
+      tasks: 'Study Tasks & Missions | Scholar Hub Pro',
+      calendar: 'Academic Planner | Scholar Hub Pro',
+      timetable: 'Study Timetable | Scholar Hub Pro',
+      routine: 'Daily Routine Tracker | Scholar Hub Pro',
+      'learning-hub': 'Learning Hub & Flashcards | Scholar Hub Pro',
+      'mock-tests': 'AI Mock Tests | Scholar Hub Pro',
+      forum: 'Scholar Community Forum | Scholar Hub Pro',
+      docs: 'Resource Vault | Scholar Hub Pro',
+      'ai-coach': 'Consult AI Guru | Scholar Hub Pro',
+      'focus-timer': 'Deep Focus Mode | Scholar Hub Pro',
+      achievements: 'My Awards | Scholar Hub Pro',
+      settings: 'Settings | Scholar Hub Pro',
+      help: 'Help Center | Scholar Hub Pro'
+    };
+
+    document.title = viewTitles[currentView] || 'Scholar Hub Pro';
+    
+    // Update Canonical URL
+    const canonical = document.getElementById('canonical-tag') as HTMLLinkElement;
+    if (canonical) {
+      canonical.href = `https://beststudent-assistant.vercel.app/${currentView === 'dashboard' ? '' : currentView}`;
+    }
+  }, [currentView]);
+
   useEffect(() => {
     // Initial sync
     setPoints(StorageService.getPoints());
