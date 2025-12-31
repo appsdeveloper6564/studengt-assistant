@@ -86,10 +86,14 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleWatchAd = () => {
-    const newPoints = points + 10;
+  const addPoints = (amount: number) => {
+    const newPoints = points + amount;
     setPoints(newPoints);
     StorageService.savePoints(newPoints);
+  };
+
+  const handleWatchAd = () => {
+    addPoints(10);
     AdService.showSmartlink();
     alert("Scholar Points Rewarded! +10 PTS Added.");
   };
@@ -125,7 +129,7 @@ const App: React.FC = () => {
 
     if (routinesRes.data && routinesRes.data.length > 0) {
       const formatted = routinesRes.data.map(r => ({
-        id: r.id, title: r.title, time: r.time, isCompleted: r.is_completed, durationMinutes: r.duration_minutes
+        id: r.id, title: r.title, time: r.time, isCompleted: r.is_completed, duration_minutes: r.durationMinutes
       }));
       setRoutines(formatted);
       StorageService.saveRoutines(formatted);
@@ -143,9 +147,7 @@ const App: React.FC = () => {
     setTasks(updated);
     StorageService.saveTasks(updated);
     if (user) CloudStorage.saveTasks(updated);
-    const newPoints = points + 5;
-    setPoints(newPoints);
-    StorageService.savePoints(newPoints);
+    addPoints(5);
   };
 
   const handleDeductPoints = (amount: number) => {
@@ -224,7 +226,7 @@ const App: React.FC = () => {
         </header>
 
         <div className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full overflow-y-auto no-scrollbar">
-           {currentView === 'dashboard' && <Dashboard tasks={tasks} timetable={timetable} routines={routines} profile={profile} points={points} onNavigate={setCurrentView} onWatchAd={handleWatchAd} />}
+           {currentView === 'dashboard' && <Dashboard tasks={tasks} timetable={timetable} routines={routines} profile={profile} points={points} onNavigate={setCurrentView} onWatchAd={handleWatchAd} addPoints={addPoints} />}
            {currentView === 'tasks' && <Tasks tasks={tasks} onUpdateTasks={handleUpdateTasks} onAddTask={handleAddTask} />}
            {currentView === 'calendar' && <CalendarView tasks={tasks} timetable={timetable} onAddTask={handleAddTask} />}
            {currentView === 'timetable' && <Timetable entries={timetable} profile={profile} onUpdateEntries={(e) => { setTimetable(e); StorageService.saveTimetable(e); if (user) CloudStorage.saveTimetable(e); }} onAddEntry={(e) => { const n = [...timetable, e]; setTimetable(n); StorageService.saveTimetable(n); if (user) CloudStorage.saveTimetable(n); }} />}

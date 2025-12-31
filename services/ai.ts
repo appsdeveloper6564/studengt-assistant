@@ -1,13 +1,19 @@
 
-// Fixed missing methods in AIService to resolve component errors and integrated Gemini API correctly following @google/genai guidelines.
 import { GoogleGenAI, Type } from "@google/genai";
-import { ForumPost, UserProfile, TimetableEntry, TaskItem, Routine, Quiz } from "../types";
+import { ForumPost, UserProfile, TimetableEntry, TaskItem, Routine, Quiz, GKQuestion } from "../types";
 
 export const AIService = {
-  getAi: () => new GoogleGenAI({ apiKey: process.env.API_KEY }),
+  getAi: () => {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey || apiKey === 'undefined') {
+      console.error("Gemini API Key is missing or undefined in process.env.API_KEY");
+    }
+    return new GoogleGenAI({ apiKey: apiKey || '' });
+  },
 
   /**
    * Complex Academic Q&A (Guru Pro)
+   * Using gemini-3-flash-preview for faster response and better availability.
    */
   askGuru: async (prompt: string, grade: string, language: string, base64Image?: string) => {
     const ai = AIService.getAi();
@@ -20,7 +26,7 @@ export const AIService = {
 
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: { parts },
         config: {
           systemInstruction: `You are the Scholar Hub AI Guru, a world-class academic mentor. 
@@ -28,13 +34,15 @@ export const AIService = {
           Answer in: ${language}.
           Always provide step-by-step logic for math. Use analogies for science. 
           Be encouraging and concise unless deep explanation is needed.`,
-          thinkingConfig: { thinkingBudget: 8000 },
-          temperature: 0.5
+          temperature: 0.7
         }
       });
       return response.text;
-    } catch (error) {
-      console.error("Gemini API Error:", error);
+    } catch (error: any) {
+      console.error("Gemini API Error details:", error);
+      if (error?.message?.includes('API_KEY_INVALID')) {
+        return "The academic gateway key seems invalid. Please check your environment configuration.";
+      }
       return "Guru is currently studying new material. Please try again in a moment!";
     }
   },
@@ -80,6 +88,42 @@ export const AIService = {
       };
     } catch (e) {
       console.error("Quiz generation failed:", e);
+      return null;
+    }
+  },
+
+  /**
+   * Generate 4-hourly GK Question
+   */
+  generateGKQuestion: async (language: string): Promise<GKQuestion | null> => {
+    const ai = AIService.getAi();
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Generate a random, high-quality General Knowledge (GK) question. Ensure it has 4 unique options and one correct answer. Target audience is students. Language: ${language}`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              question: { type: Type.STRING },
+              options: { type: Type.ARRAY, items: { type: Type.STRING } },
+              correctAnswer: { type: Type.INTEGER },
+            },
+            required: ["question", "options", "correctAnswer"]
+          }
+        }
+      });
+      const data = JSON.parse(response.text || "{}");
+      return {
+        id: crypto.randomUUID(),
+        question: data.question,
+        options: data.options,
+        correctAnswer: data.correctAnswer,
+        isAnswered: false
+      };
+    } catch (e) {
+      console.error("GK generation failed:", e);
       return null;
     }
   },
@@ -158,12 +202,15 @@ export const AIService = {
         config: {
           responseMimeType: "application/json",
           responseSchema: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING }
+            type: Type.OBJECT,
+            properties: {
+              risks: { type: Type.ARRAY, items: { type: Type.STRING } }
+            }
           }
         }
       });
-      return JSON.parse(response.text || "[]");
+      const data = JSON.parse(response.text || '{"risks": []}');
+      return data.risks || [];
     } catch (e) {
       console.error("Burnout detection failed:", e);
       return [];

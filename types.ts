@@ -75,6 +75,14 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export interface GKQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  id: string;
+  isAnswered?: boolean;
+}
+
 export interface Quiz {
   id: string;
   title: string;

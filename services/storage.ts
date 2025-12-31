@@ -1,5 +1,5 @@
 
-import { TaskItem, TimetableEntry, Routine, UserProfile, Achievement, Subject, Flashcard, ForumPost, DocResource, QuizResult, DocumentSummary, ChatMessage } from '../types';
+import { TaskItem, TimetableEntry, Routine, UserProfile, Achievement, Subject, Flashcard, ForumPost, DocResource, QuizResult, DocumentSummary, ChatMessage, GKQuestion } from '../types';
 
 const STORAGE_KEYS = {
   TASKS: 'sa_tasks_v2',
@@ -16,7 +16,9 @@ const STORAGE_KEYS = {
   DOC_SUMMARIES: 'sa_doc_summaries_v2',
   CHAT_HISTORY: 'sa_chat_history_v2',
   STREAK_DATE: 'sa_streak_date_v2',
-  STREAK_COUNT: 'sa_streak_count_v2'
+  STREAK_COUNT: 'sa_streak_count_v2',
+  GK_QUESTION: 'sa_gk_question_v2',
+  GK_LAST_TIME: 'sa_gk_last_time_v2'
 };
 
 const safeGet = <T>(key: string, defaultValue: T): T => {
@@ -55,7 +57,6 @@ export const StorageService = {
 
   getPoints: (): number => {
     const p = localStorage.getItem(STORAGE_KEYS.POINTS);
-    // Welcome Bonus: 50 points
     return p ? JSON.parse(p) : 50;
   },
   savePoints: (points: number) => localStorage.setItem(STORAGE_KEYS.POINTS, JSON.stringify(points)),
@@ -87,6 +88,12 @@ export const StorageService = {
   getAchievements: (): Achievement[] => safeGet(STORAGE_KEYS.ACHIEVEMENTS, INITIAL_ACHIEVEMENTS),
   saveAchievements: (achievements: Achievement[]) => localStorage.setItem(STORAGE_KEYS.ACHIEVEMENTS, JSON.stringify(achievements)),
   
+  getGKQuestion: (): GKQuestion | null => safeGet(STORAGE_KEYS.GK_QUESTION, null),
+  saveGKQuestion: (q: GKQuestion | null) => localStorage.setItem(STORAGE_KEYS.GK_QUESTION, JSON.stringify(q)),
+  
+  getLastGKTime: (): number => safeGet(STORAGE_KEYS.GK_LAST_TIME, 0),
+  saveLastGKTime: (time: number) => localStorage.setItem(STORAGE_KEYS.GK_LAST_TIME, JSON.stringify(time)),
+
   getStreak: (): number => safeGet(STORAGE_KEYS.STREAK_COUNT, 0),
   updateStreak: () => {
     const lastDate = localStorage.getItem(STORAGE_KEYS.STREAK_DATE);
