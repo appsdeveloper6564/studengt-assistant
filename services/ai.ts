@@ -3,20 +3,24 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { ForumPost, UserProfile, TimetableEntry, TaskItem, Routine, Quiz, GKQuestion } from "../types";
 
 export const AIService = {
-  getAi: () => {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey || apiKey === 'undefined') {
-      console.error("Gemini API Key is missing or undefined in process.env.API_KEY");
-    }
-    return new GoogleGenAI({ apiKey: apiKey || '' });
+  /**
+   * Helper to get API Key safely. 
+   */
+  getApiKey: () => {
+    const key = process.env.API_KEY;
+    if (!key || key === 'undefined' || key === 'null') return '';
+    return key;
   },
 
   /**
    * Complex Academic Q&A (Guru Pro)
-   * Using gemini-3-flash-preview for faster response and better availability.
+   * Upgraded to gemini-3-pro-preview with googleSearch tool enabled.
    */
   askGuru: async (prompt: string, grade: string, language: string, base64Image?: string) => {
-    const ai = AIService.getAi();
+    const apiKey = AIService.getApiKey();
+    if (!apiKey) return { text: "API Key not configured. Please ensure API_KEY is set in your Vercel environment variables.", references: [] };
+
+    const ai = new GoogleGenAI({ apiKey });
     const parts: any[] = [{ text: prompt }];
     if (base64Image) {
       parts.unshift({ 
@@ -26,24 +30,45 @@ export const AIService = {
 
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3-pro-preview',
         contents: { parts },
         config: {
           systemInstruction: `You are the Scholar Hub AI Guru, a world-class academic mentor. 
           The user is in grade: ${grade}. 
           Answer in: ${language}.
           Always provide step-by-step logic for math. Use analogies for science. 
+          Use Google Search to provide accurate, up-to-date information for queries about history, geography, or current events.
           Be encouraging and concise unless deep explanation is needed.`,
+          tools: [{ googleSearch: {} }],
           temperature: 0.7
         }
       });
-      return response.text;
+
+      const text = response.text || "Guru is currently silent. Try rephrasing your question!";
+      
+      // Extract grounding chunks for website references
+      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+      const references = groundingChunks
+        .filter(chunk => chunk.web)
+        .map(chunk => ({
+          title: chunk.web?.title || 'Source',
+          uri: chunk.web?.uri || '#'
+        }));
+
+      return { text, references };
     } catch (error: any) {
-      console.error("Gemini API Error details:", error);
-      if (error?.message?.includes('API_KEY_INVALID')) {
-        return "The academic gateway key seems invalid. Please check your environment configuration.";
+      console.error("Gemini API Error:", error);
+      const msg = error?.message || "";
+      if (msg.includes('API_KEY_INVALID')) {
+        return { 
+          text: "The academic gateway key (API Key) is invalid. Please verify it in your environment settings. (Build-time variables might be missing).",
+          references: [] 
+        };
       }
-      return "Guru is currently studying new material. Please try again in a moment!";
+      if (msg.includes('429')) {
+        return { text: "Guru is handling too many students right now! Please wait a few seconds.", references: [] };
+      }
+      return { text: "Guru encountered a technical hiccup. Please try again in a moment!", references: [] };
     }
   },
 
@@ -51,7 +76,10 @@ export const AIService = {
    * AI Generated Mock Test
    */
   generateCustomQuiz: async (topic: string, grade: string): Promise<Quiz | null> => {
-    const ai = AIService.getAi();
+    const apiKey = AIService.getApiKey();
+    if (!apiKey) return null;
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -96,7 +124,10 @@ export const AIService = {
    * Generate 4-hourly GK Question
    */
   generateGKQuestion: async (language: string): Promise<GKQuestion | null> => {
-    const ai = AIService.getAi();
+    const apiKey = AIService.getApiKey();
+    if (!apiKey) return null;
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -139,7 +170,10 @@ export const AIService = {
    * Suggest task priority based on importance and proximity
    */
   suggestPriority: async (tasks: TaskItem[]) => {
-    const ai = AIService.getAi();
+    const apiKey = AIService.getApiKey();
+    if (!apiKey) return [];
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -170,7 +204,10 @@ export const AIService = {
    * Break down a complex task into subtasks
    */
   breakdownTask: async (title: string) => {
-    const ai = AIService.getAi();
+    const apiKey = AIService.getApiKey();
+    if (!apiKey) return [];
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -194,11 +231,14 @@ export const AIService = {
    * Detect burnout risks in schedule
    */
   detectBurnout: async (entries: TimetableEntry[]) => {
-    const ai = AIService.getAi();
+    const apiKey = AIService.getApiKey();
+    if (!apiKey) return [];
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Analyze this study schedule for potential burnout risks (too many hours, lack of breaks, etc.): ${JSON.stringify(entries)}`,
+        contents: `Analyze this study schedule for potential burnout risks: ${JSON.stringify(entries)}`,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -221,7 +261,10 @@ export const AIService = {
    * Suggest daily rituals/habits
    */
   suggestHabits: async (grade: string, language: string): Promise<Routine[]> => {
-    const ai = AIService.getAi();
+    const apiKey = AIService.getApiKey();
+    if (!apiKey) return [];
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -260,11 +303,14 @@ export const AIService = {
    * Suggest optimal focus timer settings
    */
   suggestFlowState: async (taskTitle: string) => {
-    const ai = AIService.getAi();
+    const apiKey = AIService.getApiKey();
+    if (!apiKey) return { minutes: 25, tip: "Stay focused!" };
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Suggest an optimal focus duration (in minutes) and a quick tip to get into the flow state for this task: "${taskTitle}"`,
+        contents: `Suggest an optimal focus duration and tip for: "${taskTitle}"`,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -285,26 +331,30 @@ export const AIService = {
   },
 
   getForumSuggestion: async (post: ForumPost): Promise<string> => {
-    const ai = AIService.getAi();
+    const apiKey = AIService.getApiKey();
+    if (!apiKey) return "";
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `You are a helpful and scholarly student peer. Provide a concise, encouraging response to this forum post:
-        Title: ${post.title}
-        Content: ${post.content}`,
+        contents: `You are a helpful student peer. Provide a concise response to: ${post.title}`,
       });
-      return response.text || "That's a very interesting topic! Thanks for sharing it with the community.";
+      return response.text || "Great discussion!";
     } catch (error) {
       return "Thanks for starting this discussion!";
     }
   },
 
   getDailyInsight: async (profile: UserProfile, total: number, done: number): Promise<string> => {
-    const ai = AIService.getAi();
+    const apiKey = AIService.getApiKey();
+    if (!apiKey) return "Keep pushing towards your goals!";
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Student ${profile.name} in ${profile.grade} completed ${done} out of ${total} tasks today. Give a short, powerful motivational quote in ${profile.language}.`,
+        contents: `Student ${profile.name} completed ${done}/${total} tasks. Give a short powerful motivational quote.`,
       });
       return response.text || "Persistence is the key to success!";
     } catch (error) { return "Focus on your goals!"; }

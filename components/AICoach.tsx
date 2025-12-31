@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, User, Loader2, GraduationCap, Coins, Camera, X, BrainCircuit, History, Trash2, Play } from 'lucide-react';
+import { Bot, Send, User, Loader2, GraduationCap, Coins, Camera, X, BrainCircuit, History, Trash2, Play, ExternalLink, Files } from 'lucide-react';
 import { StorageService } from '../services/storage';
 import { AIService } from '../services/ai';
 import AdsterraAd from './AdsterraAd';
@@ -46,7 +46,7 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
     if ((!input.trim() && !selectedImage) || isLoading) return;
 
     if (userPoints < 10) {
-      return; // Handled by UI feedback
+      return; 
     }
 
     const userMsg: ChatMessage = { 
@@ -66,7 +66,7 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
     onDeductPoints(10);
 
     try {
-      const result = await AIService.askGuru(
+      const { text, references } = await AIService.askGuru(
         userMsg.content || "Analyze this",
         profile.grade,
         profile.language || 'English',
@@ -75,7 +75,8 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
 
       const aiMsg: ChatMessage = { 
         role: 'ai', 
-        content: result || "Guru is reflecting. Try again!", 
+        content: text, 
+        references: references,
         timestamp: new Date().toLocaleTimeString() 
       };
       
@@ -85,7 +86,7 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
     } catch (err) {
       const errorMsg: ChatMessage = { 
         role: 'ai', 
-        content: "Error connecting to Guru's database.", 
+        content: "Error connecting to Guru's database. Please try again.", 
         timestamp: new Date().toLocaleTimeString() 
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -135,6 +136,30 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
               }`}>
                   {msg.image && <img src={msg.image} className="w-full max-w-sm rounded-lg mb-3 shadow-xl" alt="Query" />}
                   {msg.content}
+
+                  {/* Display Grounding References */}
+                  {msg.references && msg.references.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-slate-800/50">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <ExternalLink size={10} /> Knowledge Base References
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {msg.references.map((ref, idx) => (
+                          <a 
+                            key={idx} 
+                            href={ref.uri} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-brand-blue rounded-lg text-[10px] font-bold transition-all border border-slate-700 max-w-full"
+                          >
+                            <Files size={10} />
+                            <span className="truncate max-w-[120px] md:max-w-[200px]">{ref.title}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="mt-2 text-[9px] opacity-40 uppercase font-black">{msg.timestamp}</div>
               </div>
             </div>

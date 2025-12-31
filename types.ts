@@ -73,6 +73,7 @@ export interface ChatMessage {
   content: string;
   image?: string;
   timestamp: string;
+  references?: { title: string; uri: string }[];
 }
 
 export interface GKQuestion {
