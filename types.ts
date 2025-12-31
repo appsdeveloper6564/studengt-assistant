@@ -8,6 +8,7 @@ export interface UserProfile {
   school: string;
   goal: string;
   avatar?: string;
+  language?: string;
 }
 
 export interface Subject {
@@ -59,6 +60,43 @@ export interface Exam {
   color: string;
 }
 
+export interface Quiz {
+  id: string;
+  title: string;
+  subjectId: string;
+  questions: {
+    question: string;
+    options: string[];
+    correctAnswer: number;
+    explanation?: string;
+  }[];
+}
+
+export interface Flashcard {
+  id: string;
+  front: string;
+  back: string;
+  subjectId: string;
+}
+
+export interface ForumPost {
+  id: string;
+  author: string;
+  title: string;
+  content: string;
+  timestamp: string;
+  upvotes: number;
+  commentsCount: number;
+}
+
+export interface DocResource {
+  id: string;
+  name: string;
+  type: 'pdf' | 'doc' | 'video';
+  subjectId: string;
+  size?: string;
+}
+
 export interface Achievement {
   id: string;
   title: string;
@@ -70,4 +108,4 @@ export interface Achievement {
   unlockedAt?: string;
 }
 
-export type View = 'dashboard' | 'calendar' | 'tasks' | 'timetable' | 'routine' | 'ai-coach' | 'settings' | 'achievements' | 'focus-timer';
+export type View = 'dashboard' | 'calendar' | 'tasks' | 'timetable' | 'routine' | 'ai-coach' | 'settings' | 'achievements' | 'focus-timer' | 'mock-tests' | 'learning-hub' | 'forum' | 'docs';

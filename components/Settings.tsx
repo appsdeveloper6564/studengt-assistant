@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserProfile, Subject } from '../types';
-import { User, Book, School, Save, CheckCircle2, Coins, Zap, ExternalLink, Info, Plus, Trash2, Palette, ShieldCheck, GraduationCap } from 'lucide-react';
+import { User, Book, School, Save, CheckCircle2, Coins, Zap, ExternalLink, Info, Plus, Trash2, Palette, ShieldCheck, GraduationCap, Languages } from 'lucide-react';
 import { StorageService } from '../services/storage';
 import AdsterraAd from './AdsterraAd';
 
@@ -75,6 +75,23 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile }) => {
               <input type="text" value={formData.grade} onChange={e => setFormData({...formData, grade: e.target.value})} placeholder="e.g., Year 12" className="w-full px-8 py-5 bg-slate-900 border border-slate-800 rounded-3xl focus:border-brand-blue font-bold text-white outline-none transition-all shadow-inner" />
             </div>
           </div>
+          
+          <div className="space-y-4">
+            <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] ml-1">
+              <Languages size={14} className="text-brand-orange" /> Preferred Language
+            </label>
+            <select 
+              value={formData.language || 'English'} 
+              onChange={e => setFormData({...formData, language: e.target.value})}
+              className="w-full px-8 py-5 bg-slate-900 border border-slate-800 rounded-3xl focus:border-brand-blue font-bold text-white outline-none appearance-none"
+            >
+              <option value="English">English</option>
+              <option value="Hindi">Hindi (हिंदी)</option>
+              <option value="Marathi">Marathi (मराठी)</option>
+              <option value="Bengali">Bengali (বাংলা)</option>
+            </select>
+          </div>
+
           <button type="submit" className="w-full py-6 bg-brand-blue text-white font-black rounded-3xl hover:bg-blue-600 transition-all shadow-xl shadow-brand-blue/20 uppercase tracking-widest text-sm active:scale-[0.98]">Synchronize Profile</button>
         </form>
       </div>
