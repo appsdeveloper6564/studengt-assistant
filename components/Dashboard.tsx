@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TaskItem, TimetableEntry, Routine, View, UserProfile } from '../types';
-import { CheckCircle2, Target, Sparkles, BrainCircuit, GraduationCap, Play, Coins, Timer, Flame, Lightbulb, ChevronRight, BarChart3, TrendingUp, Loader2, Zap } from 'lucide-react';
+import { CheckCircle2, Sparkles, BrainCircuit, GraduationCap, Coins, Timer, Flame, Lightbulb, ChevronRight, BarChart3, TrendingUp, Loader2, Zap, Gift } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { StorageService } from '../services/storage';
 import { AIService } from '../services/ai';
@@ -31,15 +31,21 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
 
   const loadInsight = async () => {
     setLoadingInsight(true);
-    const completed = tasks.filter(t => t.isCompleted).length;
-    const insight = await AIService.getDailyInsight(profile, tasks.length, completed);
-    setAiInsight(insight);
-    setLoadingInsight(false);
+    try {
+      const completed = tasks.filter(t => t.isCompleted).length;
+      const insight = await AIService.getDailyInsight(profile, tasks.length, completed);
+      setAiInsight(insight);
+    } catch (e) {
+      setAiInsight("Every small step leads to a giant leap. Keep studying!");
+    } finally {
+      setLoadingInsight(false);
+    }
   };
 
-  const handleBonusClaim = () => {
+  const handleClaimReward = () => {
     AdService.showSmartlink();
-    alert("Reward session initiated! Watch the content to unlock bonus points.");
+    // After returning (conceptual), we can trigger the watch ad logic or just assume they did
+    onWatchAd();
   };
 
   const completedTasks = tasks.filter(t => t.isCompleted).length;
@@ -76,7 +82,10 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
                <Lightbulb size={14} className="text-yellow-300" /> Guru's Word
             </h4>
             {loadingInsight ? (
-              <Loader2 className="animate-spin text-white/50" size={20} />
+              <div className="flex items-center gap-2">
+                <Loader2 className="animate-spin" size={16} />
+                <span className="text-xs font-bold opacity-60 italic">Consulting the academic spirits...</span>
+              </div>
             ) : (
               <p className="text-sm font-bold leading-relaxed">{aiInsight}</p>
             )}
@@ -86,13 +95,13 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
               onClick={() => onNavigate('focus-timer')}
               className="px-6 py-3 md:px-8 md:py-4 bg-white text-brand-deep font-black rounded-2xl hover:scale-105 transition-all shadow-xl active:scale-95 flex items-center gap-2 text-sm"
             >
-              <Timer size={18} /> {profile.language === 'Hindi' ? 'सत्र शुरू करें' : 'Start Session'}
+              <Timer size={18} /> {profile.language === 'Hindi' ? 'सत्र शुरू करें' : 'Start Focus'}
             </button>
             <button 
-              onClick={handleBonusClaim}
+              onClick={handleClaimReward}
               className="px-6 py-3 md:px-8 md:py-4 bg-brand-orange text-white font-black rounded-2xl hover:scale-105 transition-all shadow-xl active:scale-95 flex items-center gap-2 text-sm"
             >
-              <Zap size={18} fill="currentColor" /> {profile.language === 'Hindi' ? 'बोनस लें' : 'Claim Bonus'}
+              <Gift size={18} /> {profile.language === 'Hindi' ? 'मुफ्त अंक' : 'Claim Points (Ad)'}
             </button>
           </div>
         </div>
@@ -108,7 +117,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
           { label: 'Streak', val: `${streak} Days`, icon: Flame, color: 'text-brand-orange', bg: 'bg-brand-orange/10' },
           { label: 'Points', val: points, icon: Coins, color: 'text-brand-blue', bg: 'bg-brand-blue/10' },
         ].map((stat, idx) => (
-          <div key={idx} className="bg-[#0f172a] p-8 rounded-[2.5rem] border border-slate-800/50 hover:border-brand-blue/50 transition-all group">
+          <div key={idx} className="bg-[#0f172a] p-8 rounded-[2.5rem] border border-slate-800/50 hover:border-brand-blue/50 transition-all group cursor-pointer" onClick={() => AdService.showSmartlink()}>
             <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-6 border border-white/5`}>
               <stat.icon size={28} />
             </div>
@@ -123,9 +132,9 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
         <div className="lg:col-span-7 bg-[#0f172a] p-10 rounded-[3rem] border border-slate-800/50 shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-black text-white flex items-center gap-3">
-               <BarChart3 size={24} className="text-brand-blue" /> Subject Progress
+               <BarChart3 size={24} className="text-brand-blue" /> Discipline Progress
             </h3>
-            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Performance Metrics</div>
+            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Academic Metrics</div>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -145,7 +154,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
 
         <div className="lg:col-span-5 bg-[#0f172a] p-10 rounded-[3rem] border border-slate-800/50 shadow-2xl flex flex-col items-center justify-center">
           <h3 className="text-xl font-black mb-8 text-white w-full flex items-center gap-3">
-             <TrendingUp size={24} className="text-brand-orange" /> Overall Goal Status
+             <TrendingUp size={24} className="text-brand-orange" /> Master Objective
           </h3>
           <div className="h-60 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
@@ -158,7 +167,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-4xl font-black text-white">{tasks.length > 0 ? Math.round((completedTasks/tasks.length)*100) : 0}%</span>
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Complete</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Status</span>
             </div>
           </div>
         </div>
@@ -173,8 +182,8 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
                 <BrainCircuit size={32} className="text-yellow-300" />
             </div>
             <div className="text-left">
-                <h3 className="text-2xl font-black tracking-tight">AI Guru Pro</h3>
-                <p className="text-white/80 font-bold text-sm">Full Academic Q&A Active</p>
+                <h3 className="text-2xl font-black tracking-tight">Consult AI Guru Pro</h3>
+                <p className="text-white/80 font-bold text-sm">Real-time academic problem solving</p>
             </div>
           </div>
           <ChevronRight size={32} className="group-hover:translate-x-2 transition-transform" />
