@@ -4,27 +4,24 @@ import { ForumPost, UserProfile, TimetableEntry, TaskItem, Routine, Quiz, GKQues
 
 export const AIService = {
   /**
-   * Helper to fetch the API Key.
-   * Checks for API_KEY and the user's specific geminiapikey name.
+   * Safe retrieval of API Key defined in vite.config.ts
    */
   getApiKey: () => {
-    // Check both standard name and the one seen in user screenshot
-    const key = process.env.API_KEY || (process.env as any).geminiapikey;
-    if (!key || key === 'undefined' || key === 'null' || key === '') {
-      return null;
-    }
+    const key = process.env.API_KEY;
+    if (!key || key === "" || key === "undefined") return null;
     return key;
   },
 
   /**
    * AI Guru Pro: Academic Mentor with Web Search
+   * Switched to 'gemini-3-flash-preview' for maximum compatibility and speed.
    */
   askGuru: async (prompt: string, grade: string, language: string, base64Image?: string) => {
     const apiKey = AIService.getApiKey();
     
     if (!apiKey) {
       return { 
-        text: "🚨 API Key Configuration Error: Your key named 'geminiapikey' was not found during build. \n\nFIX: Go to Vercel Settings -> Environment Variables, rename 'geminiapikey' to 'API_KEY' (all caps), save, and REDEPLOY.", 
+        text: "🚨 API Key Configuration Error: Your key named 'geminiapikey' was not found during build. \n\nFIX: Go to Vercel Settings -> Environment Variables, ensure the key 'geminiapikey' is there, then REDEPLOY.", 
         references: [] 
       };
     }
@@ -43,7 +40,7 @@ export const AIService = {
 
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: { parts },
         config: {
           systemInstruction: `You are the Scholar Hub AI Guru, a world-class academic mentor. 
@@ -70,15 +67,18 @@ export const AIService = {
       return { text, references };
     } catch (error: any) {
       console.error("Gemini API Error:", error);
-      const msg = error?.message || "";
+      const msg = error?.message || "Unknown error";
+      
       if (msg.includes('API_KEY_INVALID') || msg.includes('403')) {
         return { 
-          text: "Invalid API Key: Your key is set but Google rejected it. Please check if your API Key is active in Google AI Studio and has no billing restrictions.",
+          text: "Invalid API Key: Your key is set but Google rejected it. Please ensure your API Key is active in Google AI Studio and has no restrictions.",
           references: [] 
         };
       }
+      
+      // Return the specific error message to help the user identify what's wrong (e.g., quota, region)
       return { 
-        text: "Guru encountered a technical issue. Please check your internet and try again.", 
+        text: `Guru Error: ${msg}. Please check your internet or try again later.`, 
         references: [] 
       };
     }
