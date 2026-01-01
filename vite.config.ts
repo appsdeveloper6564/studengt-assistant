@@ -5,7 +5,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   define: {
-    'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
+    // Mapping both possible names from build environment to frontend
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY || process.env.geminiapikey),
+    'process.env.geminiapikey': JSON.stringify(process.env.geminiapikey),
     'process.env': {} 
   },
   build: {

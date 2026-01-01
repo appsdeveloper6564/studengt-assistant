@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, User, Loader2, GraduationCap, Coins, Camera, X, BrainCircuit, History, Trash2, Play, ExternalLink, Files } from 'lucide-react';
+import { Bot, Send, User, Loader2, GraduationCap, Coins, Camera, X, BrainCircuit, Trash2, Play, ExternalLink, Files, AlertCircle } from 'lucide-react';
 import { StorageService } from '../services/storage';
 import { AIService } from '../services/ai';
 import AdsterraAd from './AdsterraAd';
@@ -46,6 +46,7 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
     if ((!input.trim() && !selectedImage) || isLoading) return;
 
     if (userPoints < 10) {
+      alert("You need at least 10 Points to consult the Guru. Watch an ad to earn more!");
       return; 
     }
 
@@ -63,7 +64,6 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
     setInput('');
     setSelectedImage(null);
     setIsLoading(true);
-    onDeductPoints(10);
 
     try {
       const { text, references } = await AIService.askGuru(
@@ -72,6 +72,12 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
         profile.language || 'English',
         userMsg.image || undefined
       );
+
+      // Deduct points only for real responses
+      const isError = text.includes("API Key Missing") || text.includes("Invalid API Key");
+      if (!isError) {
+        onDeductPoints(10);
+      }
 
       const aiMsg: ChatMessage = { 
         role: 'ai', 
@@ -86,7 +92,7 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
     } catch (err) {
       const errorMsg: ChatMessage = { 
         role: 'ai', 
-        content: "Error connecting to Guru's database. Please try again.", 
+        content: "Error connecting to Guru. Please check your internet connection.", 
         timestamp: new Date().toLocaleTimeString() 
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -114,7 +120,7 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
             </div>
             <div>
               <h3 className="text-xl font-black">AI Guru Pro</h3>
-              <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Active • {profile.language}</p>
+              <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Web Grounding Active • {profile.language}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -132,16 +138,19 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
                   {msg.role === 'user' ? <User size={16} /> : <GraduationCap size={16} className="text-brand-orange" />}
               </div>
               <div className={`max-w-[85%] p-5 text-sm md:text-base leading-relaxed whitespace-pre-wrap ${
-                msg.role === 'user' ? 'bg-brand-blue text-white rounded-2xl rounded-tr-none' : 'bg-slate-900 text-slate-100 rounded-2xl rounded-tl-none border border-slate-800'
+                msg.role === 'user' ? 'bg-brand-blue text-white rounded-2xl rounded-tr-none' : 
+                (msg.content.includes("API Key Missing") ? 'bg-red-950/40 text-red-400 border border-red-900/50' : 'bg-slate-900 text-slate-100 border border-slate-800') + ' rounded-2xl rounded-tl-none'
               }`}>
                   {msg.image && <img src={msg.image} className="w-full max-w-sm rounded-lg mb-3 shadow-xl" alt="Query" />}
+                  
+                  {msg.content.includes("API Key Missing") && <AlertCircle className="inline-block mr-2 mb-1" size={16} />}
                   {msg.content}
 
-                  {/* Display Grounding References */}
+                  {/* Display Search References */}
                   {msg.references && msg.references.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-slate-800/50">
                       <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <ExternalLink size={10} /> Knowledge Base References
+                        <ExternalLink size={10} /> Web Sources
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {msg.references.map((ref, idx) => (
@@ -164,11 +173,18 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
               </div>
             </div>
           ))}
-          {isLoading && <div className="animate-pulse text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] ml-12">Guru Thinking...</div>}
+          {isLoading && (
+            <div className="flex flex-col gap-2 ml-12 animate-pulse">
+               <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">Guru Searching Web...</div>
+               <div className="w-32 h-1 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-brand-blue w-1/2 animate-infinite-scroll"></div>
+               </div>
+            </div>
+          )}
         </div>
 
         <div className="p-4 bg-[#0b1222] border-t border-slate-800">
-          {userPoints < 10 ? (
+          {userPoints < 10 && (
             <div className="mb-4 p-4 bg-brand-orange/10 border border-brand-orange/20 rounded-2xl flex items-center justify-between">
               <div className="flex items-center gap-3">
                  <Coins size={18} className="text-brand-orange" />
@@ -178,7 +194,7 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
                 <Play size={12} fill="currentColor" /> Earn +10 Points
               </button>
             </div>
-          ) : null}
+          )}
           
           <form onSubmit={handleSend} className="flex gap-3">
             <input 
@@ -186,7 +202,7 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
               type="text" 
               value={input} 
               onChange={e => setInput(e.target.value)} 
-              placeholder={userPoints < 10 ? "Get more points to ask..." : "Ask Guru academic questions..."}
+              placeholder={userPoints < 10 ? "Recharge points to consult the Guru..." : "Type your question (History, Math, etc.)"}
               className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-5 py-3 outline-none focus:border-brand-blue font-bold text-white placeholder-slate-600 disabled:opacity-50"
             />
             <button type="submit" disabled={isLoading || userPoints < 10} className="w-12 h-12 bg-brand-blue text-white rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-all disabled:opacity-50 disabled:grayscale">
@@ -195,7 +211,6 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
           </form>
         </div>
       </div>
-      <div className="mt-2 flex justify-center"><AdsterraAd id="55ec911eca20ef6f6a3a27adad217f37" format="banner" /></div>
     </div>
   );
 };
