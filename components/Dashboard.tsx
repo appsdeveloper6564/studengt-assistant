@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { TaskItem, TimetableEntry, Routine, View, UserProfile, GKQuestion } from '../types';
 import { CheckCircle2, Sparkles, BrainCircuit, GraduationCap, Coins, Timer, Flame, Lightbulb, ChevronRight, BarChart3, TrendingUp, Loader2, Zap, Gift, HelpCircle, Check, X } from 'lucide-react';
-// Added missing imports for charting components
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { StorageService } from '../services/storage';
 import { AIService } from '../services/ai';
@@ -113,7 +112,7 @@ const GKChallenge: React.FC<{
        <p className="text-lg font-bold text-slate-200 mb-8 leading-tight">{gk.question}</p>
 
        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {gk.options.map((opt, i) => {
+          {(gk.options || []).map((opt, i) => {
             const isCorrect = gk.isAnswered && i === gk.correctAnswer;
             const isSelectedWrong = isWrong && selectedIdx === i;
 
@@ -144,11 +143,11 @@ const GKChallenge: React.FC<{
   );
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profile, points, onNavigate, onWatchAd, addPoints }) => {
+const Dashboard: React.FC<DashboardProps> = ({ tasks = [], timetable = [], routines = [], profile, points, onNavigate, onWatchAd, addPoints }) => {
   const [streak, setStreak] = useState(0);
   const [aiInsight, setAiInsight] = useState<string>('');
   const [loadingInsight, setLoadingInsight] = useState(false);
-  const subjects = StorageService.getSubjects();
+  const subjects = StorageService.getSubjects() || [];
   
   useEffect(() => {
     setStreak(StorageService.updateStreak());
@@ -158,8 +157,8 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
   const loadInsight = async () => {
     setLoadingInsight(true);
     try {
-      const completed = tasks.filter(t => t.isCompleted).length;
-      const insight = await AIService.getDailyInsight(profile, tasks.length, completed);
+      const completed = (tasks || []).filter(t => t.isCompleted).length;
+      const insight = await AIService.getDailyInsight(profile, (tasks || []).length, completed);
       setAiInsight(insight);
     } catch (e) {
       setAiInsight("Every small step leads to a giant leap. Keep studying!");
@@ -177,13 +176,13 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
     addPoints(10);
   };
 
-  const completedTasks = tasks.filter(t => t.isCompleted).length;
-  const pendingTasks = tasks.length - completedTasks;
+  const completedTasks = (tasks || []).filter(t => t.isCompleted).length;
+  const pendingTasks = (tasks || []).length - completedTasks;
   
-  const subjectDistribution = subjects.map(s => ({
+  const subjectDistribution = (subjects || []).map(s => ({
     name: s.name,
-    completed: tasks.filter(t => t.subjectId === s.id && t.isCompleted).length,
-    total: tasks.filter(t => t.subjectId === s.id).length,
+    completed: (tasks || []).filter(t => t.subjectId === s.id && t.isCompleted).length,
+    total: (tasks || []).filter(t => t.subjectId === s.id).length,
     color: s.color
   })).filter(s => s.total > 0);
 
@@ -291,15 +290,14 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, timetable, routines, profi
           <div className="h-60 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                {/* Fixed cornerRadius error by moving it from Cell to Pie component */}
                 <Pie data={taskData} cx="50%" cy="50%" innerRadius={70} outerRadius={90} paddingAngle={8} dataKey="value" stroke="none" cornerRadius={12}>
-                  {taskData.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                  {(taskData || []).map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px' }} />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-4xl font-black text-white">{tasks.length > 0 ? Math.round((completedTasks/tasks.length)*100) : 0}%</span>
+              <span className="text-4xl font-black text-white">{(tasks || []).length > 0 ? Math.round((completedTasks/(tasks || []).length)*100) : 0}%</span>
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Status</span>
             </div>
           </div>

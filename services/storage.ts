@@ -24,7 +24,9 @@ const STORAGE_KEYS = {
 const safeGet = <T>(key: string, defaultValue: T): T => {
   try {
     const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : defaultValue;
+    if (!data || data === "undefined" || data === "null") return defaultValue;
+    const parsed = JSON.parse(data);
+    return parsed !== null ? parsed : defaultValue;
   } catch (e) {
     console.error(`Error loading ${key} from storage:`, e);
     return defaultValue;
@@ -55,10 +57,7 @@ export const StorageService = {
   getRoutines: (): Routine[] => safeGet(STORAGE_KEYS.ROUTINE, []),
   saveRoutines: (routines: Routine[]) => localStorage.setItem(STORAGE_KEYS.ROUTINE, JSON.stringify(routines)),
 
-  getPoints: (): number => {
-    const p = localStorage.getItem(STORAGE_KEYS.POINTS);
-    return p ? JSON.parse(p) : 50;
-  },
+  getPoints: (): number => safeGet(STORAGE_KEYS.POINTS, 50),
   savePoints: (points: number) => localStorage.setItem(STORAGE_KEYS.POINTS, JSON.stringify(points)),
 
   getProfile: (): UserProfile => safeGet(STORAGE_KEYS.PROFILE, { name: '', grade: '', school: '', goal: '', language: 'English' }),

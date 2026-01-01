@@ -10,11 +10,11 @@ interface LearningHubProps {
   subjects: Subject[];
 }
 
-const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
+const LearningHub: React.FC<LearningHubProps> = ({ subjects = [] }) => {
   const [activeTab, setActiveTab] = useState<'flashcards' | 'notes' | 'ai-summaries'>('flashcards');
-  const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]?.id || '');
-  const [flashcards, setFlashcards] = useState<Flashcard[]>(StorageService.getFlashcards());
-  const [summaries, setSummaries] = useState<DocumentSummary[]>(StorageService.getDocSummaries());
+  const [selectedSubject, setSelectedSubject] = useState<string>((subjects || [])[0]?.id || '');
+  const [flashcards, setFlashcards] = useState<Flashcard[]>(StorageService.getFlashcards() || []);
+  const [summaries, setSummaries] = useState<DocumentSummary[]>(StorageService.getDocSummaries() || []);
   const [currentCardIdx, setCurrentCardIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -25,7 +25,7 @@ const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
   const [newBack, setNewBack] = useState('');
   const [summaryInput, setSummaryInput] = useState('');
 
-  const filteredCards = flashcards.filter(c => c.subjectId === selectedSubject);
+  const filteredCards = (flashcards || []).filter(c => c.subjectId === selectedSubject);
 
   const handleAddCard = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +36,7 @@ const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
       back: newBack,
       subjectId: selectedSubject
     };
-    const updated = [...flashcards, newCard];
+    const updated = [...(flashcards || []), newCard];
     setFlashcards(updated);
     StorageService.saveFlashcards(updated);
     setNewFront('');
@@ -49,7 +49,6 @@ const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
     const quiz = await AIService.generateQuiz(summary.summary);
     if (quiz) {
       alert(`AI has generated a quiz: "${quiz.title}". You can now find it in the Mock Tests section.`);
-      // In a real app, we'd save this to the 'quizzes' table in Supabase
     }
     setIsGeneratingQuiz(null);
   };
@@ -58,11 +57,14 @@ const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
     if (!summaryInput.trim() || isSummarizing) return;
     setIsSummarizing(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const apiKey = AIService.getApiKey();
+      if (!apiKey) throw new Error("API Key Missing");
+      
+      const ai = new GoogleGenAI({ apiKey });
       const prompt = `Summarize: "${summaryInput.substring(0, 4000)}". Generate 3 flashcards.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-flash-lite-latest',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -87,28 +89,28 @@ const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
       const newSummary: DocumentSummary = {
         id: crypto.randomUUID(),
         title: summaryInput.substring(0, 30) + '...',
-        summary: data.summary,
-        flashcards: data.flashcards
+        summary: data.summary || "Summary generated.",
+        flashcards: data.flashcards || []
       };
 
-      const updatedSummaries = [newSummary, ...summaries];
+      const updatedSummaries = [newSummary, ...(summaries || [])];
       setSummaries(updatedSummaries);
       StorageService.saveDocSummaries(updatedSummaries);
 
-      const newGeneratedCards: Flashcard[] = data.flashcards.map((f: any) => ({
+      const newGeneratedCards: Flashcard[] = (data.flashcards || []).map((f: any) => ({
         id: crypto.randomUUID(),
         front: f.front,
         back: f.back,
         subjectId: selectedSubject
       }));
       
-      const updatedFlashcards = [...flashcards, ...newGeneratedCards];
+      const updatedFlashcards = [...(flashcards || []), ...newGeneratedCards];
       setFlashcards(updatedFlashcards);
       StorageService.saveFlashcards(updatedFlashcards);
 
       setSummaryInput('');
     } catch (err) {
-      alert("AI Error.");
+      alert("AI Error. Guru couldn't process this request.");
     } finally {
       setIsSummarizing(false);
     }
@@ -135,7 +137,7 @@ const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
       </div>
 
       <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-        {subjects.map(s => (
+        {(subjects || []).map(s => (
           <button
             key={s.id}
             onClick={() => setSelectedSubject(s.id)}
@@ -148,25 +150,25 @@ const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
 
       {activeTab === 'flashcards' && (
         <div className="flex flex-col items-center justify-center py-10 space-y-10">
-          {filteredCards.length > 0 ? (
+          {(filteredCards || []).length > 0 ? (
             <>
               <div onClick={() => setIsFlipped(!isFlipped)} className="relative w-full max-w-md h-72 cursor-pointer perspective-1000 group">
                 <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
                   <div className="absolute inset-0 bg-slate-900 border-2 border-slate-800 rounded-[3rem] flex flex-col items-center justify-center p-10 backface-hidden shadow-2xl">
-                    <p className="text-2xl font-black text-white text-center">{filteredCards[currentCardIdx].front}</p>
+                    <p className="text-2xl font-black text-white text-center">{(filteredCards || [])[currentCardIdx]?.front}</p>
                     <div className="absolute bottom-6 flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-widest">
                        <RotateCcw size={12} /> Tap to flip
                     </div>
                   </div>
                   <div className="absolute inset-0 bg-brand-blue border-2 border-brand-blue/50 rounded-[3rem] flex items-center justify-center p-10 rotate-y-180 backface-hidden shadow-2xl">
-                    <p className="text-2xl font-black text-white text-center">{filteredCards[currentCardIdx].back}</p>
+                    <p className="text-2xl font-black text-white text-center">{(filteredCards || [])[currentCardIdx]?.back}</p>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-6">
                 <button onClick={() => setCurrentCardIdx(p => Math.max(0, p-1))} className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center"><ChevronRight className="rotate-180" /></button>
-                <span className="font-black">{currentCardIdx + 1} / {filteredCards.length}</span>
-                <button onClick={() => setCurrentCardIdx(p => Math.min(filteredCards.length-1, p+1))} className="w-14 h-14 bg-brand-blue rounded-2xl flex items-center justify-center"><ChevronRight /></button>
+                <span className="font-black">{currentCardIdx + 1} / {(filteredCards || []).length}</span>
+                <button onClick={() => setCurrentCardIdx(p => Math.min((filteredCards || []).length-1, p+1))} className="w-14 h-14 bg-brand-blue rounded-2xl flex items-center justify-center"><ChevronRight /></button>
               </div>
             </>
           ) : (
@@ -197,7 +199,7 @@ const LearningHub: React.FC<LearningHubProps> = ({ subjects }) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {summaries.map(s => (
+            {(summaries || []).map(s => (
               <div key={s.id} className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 space-y-4">
                 <h4 className="font-black text-white truncate">{s.title}</h4>
                 <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed italic">"{s.summary}"</p>

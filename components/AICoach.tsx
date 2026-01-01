@@ -15,14 +15,14 @@ interface AICoachProps {
 
 const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd }) => {
   const profile = StorageService.getProfile();
-  const [messages, setMessages] = useState<ChatMessage[]>(StorageService.getChatHistory());
+  const [messages, setMessages] = useState<ChatMessage[]>(StorageService.getChatHistory() || []);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (messages.length === 0) {
+    if ((messages || []).length === 0) {
       const welcome = { 
         role: 'ai', 
         content: profile.language === 'Hindi' 
@@ -30,8 +30,9 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
           : "Namaste Scholar! I am your AI Guru. 🎓 I can solve Math, Science, and help with Essays. Ask me anything!",
         timestamp: new Date().toLocaleTimeString()
       } as ChatMessage;
-      setMessages([welcome]);
-      StorageService.saveChatHistory([welcome]);
+      const initial = [welcome];
+      setMessages(initial);
+      StorageService.saveChatHistory(initial);
     }
   }, [profile.language]);
 
@@ -57,7 +58,7 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
       timestamp: new Date().toLocaleTimeString() 
     };
     
-    const updatedHistory = [...messages, userMsg];
+    const updatedHistory = [...(messages || []), userMsg];
     setMessages(updatedHistory);
     StorageService.saveChatHistory(updatedHistory);
     
@@ -66,14 +67,13 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
     setIsLoading(true);
 
     try {
-      const { text, references } = await AIService.askGuru(
+      const { text, references = [] } = await AIService.askGuru(
         userMsg.content || "Analyze this",
         profile.grade,
         profile.language || 'English',
         userMsg.image || undefined
       );
 
-      // Deduct points only for real responses
       const isError = text.includes("API Key Missing") || text.includes("Invalid API Key");
       if (!isError) {
         onDeductPoints(10);
@@ -95,7 +95,7 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
         content: "Error connecting to Guru. Please check your internet connection.", 
         timestamp: new Date().toLocaleTimeString() 
       };
-      setMessages(prev => [...prev, errorMsg]);
+      setMessages(prev => [...(prev || []), errorMsg]);
     } finally {
       setIsLoading(false);
     }
@@ -132,28 +132,28 @@ const AICoach: React.FC<AICoachProps> = ({ userPoints, onDeductPoints, onWatchAd
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-[#01030a] no-scrollbar">
-          {messages.map((msg, i) => (
+          {(messages || []).map((msg, i) => (
             <div key={i} className={`flex items-start gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${msg.role === 'user' ? 'bg-brand-blue border-blue-400' : 'bg-slate-800 border-slate-700'}`}>
                   {msg.role === 'user' ? <User size={16} /> : <GraduationCap size={16} className="text-brand-orange" />}
               </div>
               <div className={`max-w-[85%] p-5 text-sm md:text-base leading-relaxed whitespace-pre-wrap ${
                 msg.role === 'user' ? 'bg-brand-blue text-white rounded-2xl rounded-tr-none' : 
-                (msg.content.includes("API Key Missing") ? 'bg-red-950/40 text-red-400 border border-red-900/50' : 'bg-slate-900 text-slate-100 border border-slate-800') + ' rounded-2xl rounded-tl-none'
+                ((msg.content || '').includes("API Key Missing") ? 'bg-red-950/40 text-red-400 border border-red-900/50' : 'bg-slate-900 text-slate-100 border border-slate-800') + ' rounded-2xl rounded-tl-none'
               }`}>
                   {msg.image && <img src={msg.image} className="w-full max-w-sm rounded-lg mb-3 shadow-xl" alt="Query" />}
                   
-                  {msg.content.includes("API Key Missing") && <AlertCircle className="inline-block mr-2 mb-1" size={16} />}
+                  {(msg.content || '').includes("API Key Missing") && <AlertCircle className="inline-block mr-2 mb-1" size={16} />}
                   {msg.content}
 
                   {/* Display Search References */}
-                  {msg.references && msg.references.length > 0 && (
+                  {msg.references && (msg.references || []).length > 0 && (
                     <div className="mt-4 pt-4 border-t border-slate-800/50">
                       <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                         <ExternalLink size={10} /> Web Sources
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {msg.references.map((ref, idx) => (
+                        {(msg.references || []).map((ref, idx) => (
                           <a 
                             key={idx} 
                             href={ref.uri} 

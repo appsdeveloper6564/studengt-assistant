@@ -10,9 +10,9 @@ interface MockTestsProps {
   subjects: Subject[];
 }
 
-const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
+const MockTests: React.FC<MockTestsProps> = ({ subjects = [] }) => {
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
-  const [results, setResults] = useState<QuizResult[]>(StorageService.getQuizResults());
+  const [results, setResults] = useState<QuizResult[]>(StorageService.getQuizResults() || []);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -73,10 +73,10 @@ const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
         id: crypto.randomUUID(),
         quizTitle: activeQuiz.title,
         score,
-        total: activeQuiz.questions.length,
+        total: (activeQuiz.questions || []).length,
         date: new Date().toLocaleDateString()
       };
-      const updatedResults = [newResult, ...results];
+      const updatedResults = [newResult, ...(results || [])];
       setResults(updatedResults);
       StorageService.saveQuizResults(updatedResults);
     }
@@ -86,16 +86,16 @@ const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
     setActiveQuiz(quiz);
     setCurrentQuestion(0);
     setScore(0);
-    setTimeLeft(quiz.questions.length * 60); 
+    setTimeLeft((quiz.questions || []).length * 60); 
     setIsFinished(false);
   };
 
   const handleAnswer = (idx: number) => {
-    if (idx === activeQuiz!.questions[currentQuestion].correctAnswer) {
+    if (idx === (activeQuiz?.questions || [])[currentQuestion]?.correctAnswer) {
       setScore(prev => prev + 1);
     }
     
-    if (currentQuestion < activeQuiz!.questions.length - 1) {
+    if (currentQuestion < (activeQuiz?.questions || []).length - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
       handleQuizEnd();
@@ -115,8 +115,8 @@ const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Final Performance Report</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-10 rounded-[3rem] shadow-2xl">
-           <div className="text-7xl font-black text-brand-blue mb-4">{Math.round((score/activeQuiz.questions.length)*100)}%</div>
-           <p className="text-xl font-bold text-slate-300">Total Score: {score} out of {activeQuiz.questions.length}</p>
+           <div className="text-7xl font-black text-brand-blue mb-4">{activeQuiz.questions?.length > 0 ? Math.round((score/activeQuiz.questions.length)*100) : 0}%</div>
+           <p className="text-xl font-bold text-slate-300">Total Score: {score} out of {(activeQuiz.questions || []).length}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button onClick={() => setActiveQuiz(null)} className="px-10 py-5 bg-slate-800 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl hover:bg-slate-700 transition-all">Back to Lobby</button>
@@ -129,7 +129,8 @@ const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
   }
 
   if (activeQuiz) {
-    const q = activeQuiz.questions[currentQuestion];
+    const q = (activeQuiz.questions || [])[currentQuestion];
+    if (!q) return null;
     return (
       <div className="max-w-3xl mx-auto space-y-10 animate-in fade-in duration-500">
         <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-6 rounded-[2rem] shadow-xl">
@@ -145,11 +146,11 @@ const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
         </div>
 
         <div className="bg-[#0f172a] border border-slate-800 p-8 md:p-12 rounded-[3rem] shadow-2xl relative overflow-hidden">
-           <div className="absolute top-0 left-0 h-1 bg-brand-blue transition-all duration-500" style={{ width: `${((currentQuestion+1)/activeQuiz.questions.length)*100}%` }}></div>
-           <p className="text-slate-500 font-black uppercase tracking-widest text-[10px] mb-6">Question {currentQuestion + 1} of {activeQuiz.questions.length}</p>
+           <div className="absolute top-0 left-0 h-1 bg-brand-blue transition-all duration-500" style={{ width: `${((currentQuestion+1)/(activeQuiz.questions || []).length)*100}%` }}></div>
+           <p className="text-slate-500 font-black uppercase tracking-widest text-[10px] mb-6">Question {currentQuestion + 1} of {(activeQuiz.questions || []).length}</p>
            <h4 className="text-2xl md:text-3xl font-black text-white mb-10 leading-tight">{q.question}</h4>
            <div className="grid grid-cols-1 gap-4">
-              {q.options.map((opt, i) => (
+              {(q.options || []).map((opt, i) => (
                 <button 
                   key={i} 
                   onClick={() => handleAnswer(i)}
@@ -201,10 +202,10 @@ const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {quizzes.map(quiz => (
+          {(quizzes || []).map(quiz => (
             <div key={quiz.id} className="bg-[#0f172a] p-8 rounded-[2.5rem] border border-slate-800 hover:border-brand-blue/40 transition-all group flex flex-col h-full shadow-lg">
               <h4 className="text-2xl font-black text-white mb-2 tracking-tight">{quiz.title}</h4>
-              <p className="text-xs text-slate-500 font-bold mb-10">{quiz.questions.length} Questions • {quiz.questions.length} Minutes</p>
+              <p className="text-xs text-slate-500 font-bold mb-10">{(quiz.questions || []).length} Questions • {(quiz.questions || []).length} Minutes</p>
               <button onClick={() => startQuiz(quiz)} className="mt-auto w-full py-4 bg-brand-blue text-white font-black rounded-2xl hover:bg-blue-600 shadow-xl shadow-brand-blue/20 transition-all uppercase tracking-widest text-xs active:scale-95">Take Assessment</button>
             </div>
           ))}
@@ -213,20 +214,19 @@ const MockTests: React.FC<MockTestsProps> = ({ subjects }) => {
         <div className="bg-slate-900/50 p-10 rounded-[3rem] border border-slate-800 space-y-8 h-fit">
           <h3 className="text-xl font-black text-white flex items-center gap-3"><TrendingUp size={24} className="text-brand-orange" /> Proficiency Log</h3>
           <div className="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar">
-            {results.length > 0 ? results.map(r => (
+            {(results || []).length > 0 ? (results || []).map(r => (
               <div key={r.id} className="p-6 bg-slate-900 rounded-2xl border border-slate-800 flex justify-between items-center hover:bg-slate-800 transition-colors cursor-pointer" onClick={() => AdService.showSmartlink()}>
                 <div>
                   <p className="text-xs font-black text-white truncate max-w-[150px]">{r.quizTitle}</p>
                   <p className="text-[10px] font-bold text-slate-500 uppercase">{r.date}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-black text-brand-blue">{Math.round((r.score/r.total)*100)}%</p>
+                  <p className="text-xl font-black text-brand-blue">{r.total > 0 ? Math.round((r.score/r.total)*100) : 0}%</p>
                   <p className="text-[9px] font-black text-slate-500">{r.score}/{r.total} ACCURACY</p>
                 </div>
               </div>
             )) : (
               <div className="text-center py-10">
-                {/* Fixed: AlertCircle imported from lucide-react */}
                 <AlertCircle className="mx-auto text-slate-700 mb-2" size={32} />
                 <p className="text-slate-600 font-bold uppercase tracking-widest text-[10px]">No recent data</p>
               </div>
